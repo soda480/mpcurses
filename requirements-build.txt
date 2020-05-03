@@ -1,0 +1,7 @@
+coverage
+flake8
+pypandoc
+unittest-xml-reporting
+mccabe
+mock
+radon

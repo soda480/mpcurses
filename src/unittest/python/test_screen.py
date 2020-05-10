@@ -701,15 +701,24 @@ class TestScreen(unittest.TestCase):
     def test__echo_to_screen_Should_CallUpdateScreen_When_Screen(self, update_screen_patch, *patches):
         screen_mock = Mock()
         screen_layout_mock = Mock()
-        shared_data = {
-            'messages': [
-                'message1',
-                'message2'
-            ]
+        data = {
+            'key1': True,
+            'key2': 1,
+            'key3': 3.14,
+            'key4': 'the value of key4',
+            'key5': {'k1': 'v1', 'k2': 'v2'},
+            'key6': ('k1', 'k2', 'k3'),
+            'key7': ['k1', 'k2', 'k3', 'k4'],
+            'key8': Mock()
         }
-        echo_to_screen(screen_mock, shared_data, screen_layout_mock)
-        self.assertEqual(update_screen_patch.mock_calls[0], call('message1', screen_mock, screen_layout_mock))
-        self.assertEqual(update_screen_patch.mock_calls[1], call('message2', screen_mock, screen_layout_mock))
+        echo_to_screen(screen_mock, data, screen_layout_mock)
+        self.assertTrue(call("'key1' is 'True'", screen_mock, screen_layout_mock) in update_screen_patch.mock_calls)
+        self.assertTrue(call("'key2' is '1'", screen_mock, screen_layout_mock) in update_screen_patch.mock_calls)
+        self.assertTrue(call("'key3' is '3.14'", screen_mock, screen_layout_mock) in update_screen_patch.mock_calls)
+        self.assertTrue(call("'key4' is 'the value of key4'", screen_mock, screen_layout_mock) in update_screen_patch.mock_calls)
+        self.assertTrue(call("'key5' has 2 items", screen_mock, screen_layout_mock) in update_screen_patch.mock_calls)
+        self.assertTrue(call("'key6' has 3 items", screen_mock, screen_layout_mock) in update_screen_patch.mock_calls)
+        self.assertTrue(call("'key7' has 4 items", screen_mock, screen_layout_mock) in update_screen_patch.mock_calls)
 
     def test__refresh_screen_Should_NotCallScreenRefresh_When_ScreenIsNone(self, *patches):
         self.assertIsNone(refresh_screen(None))

@@ -21,16 +21,16 @@ def get_hex():
 
 def get_servers(bays):
     servers = []
-    for offset, bay in enumerate(bays):
+    for bay in bays:
         servers.append({
-            'offset': offset,
             'bay': bay,
+            'firmware version': get_current_firmware(),
             'servername': 'server-{}.company.com'.format(get_hex()[0:4]),
         })
     return servers
 
 
-def update_firmware(bay_number, servername, image_url, firmware_version):
+def update_bay_firmware(bay_number, servername, firmware_version):
     logger.debug('processing bay {} at: {}'.format(bay_number, datetime.now().strftime('%H:%M:%S')))
 
     if '0' in servername or '9' in servername or '-4' in servername:
@@ -55,21 +55,19 @@ def update_firmware(bay_number, servername, image_url, firmware_version):
         for _ in range(1, warnings):
             logger.warn('simulate a warning occurring')
 
-    logger.debug('firmware version for bay {} is "{}"'.format(bay_number, firmware_version))
+    logger.debug("'firmware version' is '{}'".format(firmware_version))
 
 
 @queue_handler
-def process_update(data, shared_data):
-    bay_number = str(data['bay'])
-    servername = data['servername']
-    image_url = shared_data['image_url']
-    logger.debug('executing process upgrade for data {} shared data {}'.format(data, shared_data))
-    acronym = 'HPIP'
+def update_firmware(process_data, shared_data):
+    bay_number = str(process_data['bay'])
+    servername = process_data['servername']
+    acronym = 'BIOS'
     version = '2.64'
 
     try:
-        logger.info('executing {} v{} firmware update on server at bay {}'.format(acronym.upper(), version, bay_number))
-        update_firmware(bay_number, servername, image_url, version)
+        logger.debug('executing {} v{} firmware update on server at bay {}'.format(acronym.upper(), version, bay_number))
+        update_bay_firmware(bay_number, servername, version)
         logger.debug('{} v{} firmware update on server at bay {} was successful'.format(acronym.upper(), version, bay_number))
 
     except Exception as exception:
@@ -117,7 +115,6 @@ def get_screen_map():
             'text_color': 245,
             'color': 7,
             'position': (1, 20),
-            # 'clear': True,
             'regex': '^mpcurses: number of queued processes (?P<value>\d+)$',
             'window_id': 'window_legend'
         },
@@ -131,72 +128,65 @@ def get_screen_map():
             'regex': '^mpcurses: a process has completed$',
             'window_id': 'window_legend'
         },
-        'status': {
-            'text': '',
-            'color': 31,
-            'position': (2, 1),
-            'clear': True,
-            'regex': '^INFO: (?P<value>.*)$'
-        },
         'bay_header': {
             'text': 'Bay',
             'text_color': 243,
-            'position': (3, 2)
+            'position': (2, 2)
         },
         'server_header': {
             'text': 'Server Name',
             'text_color': 243,
-            'position': (3, 7)
+            'position': (2, 7)
         },
         'firmware_header': {
             'text': 'F/W',
             'text_color': 243,
-            'position': (3, 34)
+            'position': (2, 34)
         },
         'warning_header': {
             'text': 'WRN',
             'text_color': 243,
-            'position': (3, 41)
+            'position': (2, 41)
         },
         'message_header': {
             'text': 'Status',
             'text_color': 243,
-            'position': (3, 48)
+            'position': (2, 48)
         },
         '_indicator_on': {
             'text': '',
             'replace_text': '->',
             'color': 15,
-            'position': (4, 0),
-            'regex': '^.* executing .* firmware update on server at bay .*$',
+            'position': (3, 0),
+            'regex': '^executing .* firmware update on server at bay .*$',
             'table': 'bay_table'
         },
         '_indicator_off': {
             'text': '',
             'replace_text': '  ',
-            'position': (4, 0),
+            'position': (3, 0),
             'regex': '^processing next bay$',
             'table': 'bay_table'
         },
         'bay': {
             'text': '',
             'color': 0,
-            'position': (4, 2),
-            'regex': '^servername for bay (?P<value>\d+) is .*$',
+            'position': (3, 2),
+            'regex': "^'bay' is '(?P<value>\d+)'$",
             'table': 'bay_table'
         },
-        'server': {
+        'servername': {
             'text': '',
             'color': 0,
-            'position': (4, 7),
-            'regex': '^servername for bay \d+ is "(?P<value>.*)"$',
+            'position': (3, 7),
+            'regex': "^'servername' is '(?P<value>.*)'$",
             'table': 'bay_table'
         },
         'firmware': {
             'text': '',
             'color': 0,
-            'position': (4, 34),
-            'regex': '^firmware version for bay \d+ is "(?P<value>.*)"$',
+            'position': (3, 34),
+            'regex': "^'firmware version' is '(?P<value>.*)'$",
             'effects': [
                 {
                     'regex': '.*2.64.*$',
@@ -208,7 +198,7 @@ def get_screen_map():
         'warning': {
             'text': '',
             'color': 4,
-            'position': (4, 41),
+            'position': (3, 41),
             'keep_count': True,
             'regex': '^WARN:.*$',
             'offset': {},
@@ -217,7 +207,7 @@ def get_screen_map():
         'message': {
             'text': '',
             'color': 0,
-            'position': (4, 48),
+            'position': (3, 48),
             'clear': True,
             'regex': '^(?!mpcurses:.*)(?!processing next bay)(?!DONE)(?!INFO:.*)(?P<value>.*)$',
             'effects': [
@@ -242,35 +232,14 @@ def get_current_firmware():
     return random.choice(['1.01', '2.01', '2.00', '2.02', '2.03', '2.04', '2.05', '2.06'])
 
 
-def get_messages(servers):
-    messages = []
-    for server in servers:
-        offset = server['offset']
-        bay = server['bay']
-        servername = server['servername']
-        messages.append('#{}-servername for bay {} is "{}"'.format(
-            offset, bay, servername))
-        messages.append('#{}-firmware version for bay {} is "{}"'.format(
-            offset, bay, get_current_firmware()))
-        messages.append('#{}-'.format(offset))
-    return messages
-
-
 def main():
     """ main program
     """
     bays = range(1,17)
     servers = get_servers(bays)
     execute(
-        function=process_update,
-        process_data=[
-            (server['offset'], server) for server in servers
-        ],
-        shared_data={
-            'image_url': '-some-image-url-',
-            'novc': False,
-            'messages': get_messages(servers)
-        },
+        function=update_firmware,
+        process_data=servers,
         number_of_processes=5,
         screen_layout=get_screen_map())
 

@@ -39,6 +39,7 @@ def initialize_screen(screen, screen_layout):
     if not screen:
         return
 
+    logger.debug('initializing screen')
     initialize_colors()
     curses.curs_set(0)
 
@@ -256,15 +257,24 @@ def blink_running(screen, blink_meta):
             blink_meta['blink_on_time'] = current_time
 
 
-def echo_to_screen(screen, shared_data, screen_layout):
-    """ update screen with echo messages in shared data
+def echo_to_screen(screen, data, screen_layout, offset=None):
+    """ iterate over items in data dict update screen with echo messages in shared data
     """
     if not screen:
         return
 
-    messages = shared_data.get('messages', [])
-    for message in messages:
+    for key, value in data.items():
+        message = ''
+        if isinstance(value, (int, float, str, bool)):
+            message = "'{}' is '{}'".format(key, value)
+        elif isinstance(value, (list, dict, tuple)):
+            message = "'{}' has {} items".format(key, len(value))
+        if offset:
+            message = '#{}-{}'.format(offset, message)
         update_screen(message, screen, screen_layout)
+        if offset:
+            # send empty message at offset
+            update_screen('#{}-'.format(offset), screen, screen_layout)
 
 
 def refresh_screen(screen):

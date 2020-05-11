@@ -1,4 +1,4 @@
-FROM python:3.6.5-stretch
+FROM python:3.6.5-slim
 
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV TERM xterm-256color

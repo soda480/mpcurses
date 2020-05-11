@@ -72,13 +72,14 @@ class TestProcess(unittest.TestCase):
 
         screen_mock = Mock()
         function_mock = Mock()
-        to_process_data = [(0, {})]
+        process_data = [(0, {})]
         shared_data = {}
         num_processes = 1
         screen_layout = Mock()
         processes = {}
+        messages = []
 
-        _execute(screen_mock, function_mock, to_process_data, shared_data, num_processes, screen_layout, processes)
+        _execute(screen_mock, function_mock, process_data, shared_data, num_processes, messages, screen_layout, processes)
 
         screen_mock.refresh.assert_called_once_with()
         self.assertEqual(len(update_screen_patch.mock_calls), 3)
@@ -117,8 +118,9 @@ class TestProcess(unittest.TestCase):
         num_processes = 1
         screen_layout = {}
         active_processes = {}
+        messages = []
 
-        _execute(screen_mock, function_mock, process_data, shared_data, num_processes, screen_layout, active_processes)
+        _execute(screen_mock, function_mock, process_data, shared_data, num_processes, messages, screen_layout, active_processes)
 
         start_process_patch.assert_called()
         start_process_patch.assert_called_once_with(function_mock, shared_data, message_queue_mock, process_queue_mock.get.return_value, active_processes)
@@ -151,13 +153,14 @@ class TestProcess(unittest.TestCase):
 
         screen_mock = Mock()
         function_mock = Mock()
-        to_process_data = [(0, {'bay': 1}), (1, {'bay': 2}), (2, {'bay': 3})]
+        process_data = [(0, {'bay': 1}), (1, {'bay': 2}), (2, {'bay': 3})]
         shared_data = {}
         num_processes = 1
         screen_layout = {}
         processes = {}
+        messages = []
 
-        _execute(screen_mock, function_mock, to_process_data, shared_data, num_processes, screen_layout, processes)
+        _execute(screen_mock, function_mock, process_data, shared_data, num_processes, messages, screen_layout, processes)
 
         self.assertEqual(len(process_queue_mock.get.mock_calls), 2)
 
@@ -167,12 +170,9 @@ class TestProcess(unittest.TestCase):
             KeyboardInterrupt('keyboard interrupt')
         ]
         function_mock = Mock()
-        to_process_data = [(0, {})]
-        shared_data = {}
-        num_processes = 1
         screen_layout = Mock()
         with self.assertRaises(SystemExit):
-            execute(function_mock, to_process_data, shared_data, num_processes, screen_layout)
+            execute(function=function_mock, number_of_processes=1, screen_layout=screen_layout)
 
     @patch('mpcurses.process.Process')
     def test__start_process_Should_StartProcessAndAddToProcesses_When_Called(self, process_patch, *patches):

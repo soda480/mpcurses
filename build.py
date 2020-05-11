@@ -20,9 +20,9 @@ With the mpcurses APIs, the complexities of setting up multi-processing within a
 
 **How it works**
 
-The method you wish to execute concurrently is decorated with the queue handler decorator. The queue handler decorator creates a new log handler that will write all logged messages within the decorated method to a thread-safe queue. The main process creates the thread-safe message queue and handles the spawning of the desired number of concurrent processes, each process will be passed the reference to the message queue upon startup. The main process will then read messages from the message queue as they come in and update the curses screen accordingly.
+The method you wish to execute concurrently is decorated with the queue handler decorator. The queue handler decorator creates a new log handler that will write all logged messages within the decorated method to a thread-safe queue. The main process creates the thread-safe message queue and handles the spawning of the desired number of concurrent processes, each process will be passed the reference to the message queue upon startup. As the process executes it will send all log messages to the message queue. The main process will then read messages from the message queue as they come in and update the curses screen accordingly.
 
-The layout of the curses screen is defined as a dictionary and can leverage builtin constructs for capturing messages, incrementing counters, and processing side effects such as changing text colors when certain messages appear. The result is a dynamic screen that is being updated dynamically from any number of concurrent processes running in the background.
+The layout of the curses screen is defined as a dictionary and can leverage builtin constructs for capturing messages, incrementing counters, and processing side effects such as changing text colors when certain messages appear. The result is a screen that is being updated dynamically from one or more concurrent processes running in the background.
 
 For samples checkout our home page: https://github.com/soda480/mpcurses
 """
@@ -46,7 +46,7 @@ authors = [
 ]
 summary = 'A framework that exposes a simple set of APIs enabling multi-process integration with the curses screen painting library'
 url = 'https://github.com/soda480/mpcurses'
-version = '0.0.1'
+version = '0.0.2'
 default_task = [
     'clean',
     'analyze',

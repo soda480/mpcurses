@@ -76,9 +76,8 @@ def main():
     execute(
         function=check_primes,
         process_data=[
-            (0, {'range': '1-10000'})
+            {'range': '1-10000'}
         ],
-        shared_data={},
         number_of_processes=1,
         screen_layout=get_screen_map())
 

@@ -126,7 +126,7 @@ def send_process_state(active_processes, process_queue, screen, screen_layout, p
         update_screen('mpcurses: a process has completed', screen, screen_layout)
 
 
-def _execute(screen, function, process_data, shared_data, number_of_processes, screen_layout, active_processes):
+def _execute(screen, function, process_data, shared_data, number_of_processes, init_messages, screen_layout, active_processes):
     """ private execute api
 
         spawns child processes as dictated by process_data and manages displaying spawned process messages to screen if screen_layout is defined
@@ -136,19 +136,27 @@ def _execute(screen, function, process_data, shared_data, number_of_processes, s
         Parameters:
             screen (object): wrapped mpcurses
             function (callable): callable object that each spawned process will execute as their target
-            process_data (list): list of lists containing an offset and dictionary of meta-data specific to spawned process at offset
-                [[0, {}], [1, {}], [2, {}]]
+            process_data (list): list of tuples containing an offset and dictionary of meta-data specific to spawned process at offset
+                [ (0, {}), (1, {}), (2, {}) ]
             shared_data (dict): data to provide all spawned processes
             number_of_processes (int): number of processes to spawn
+            init_messages (list): list of initialization messages to send screen
             screen_layout (dict): dictionary containing meta-data for how logged messages for each spawned process should be displayed on screen
             active_processes (dict): dictionary maintaining meta-data about all active processes
         Returns:
             None
     """
     initialize_screen(screen, screen_layout)
+
+    for init_message in init_messages:
+        update_screen(init_message, screen, screen_layout)
+    for index, data in enumerate(process_data):
+        echo_to_screen(screen, data[1], screen_layout, offset=index)
     echo_to_screen(screen, shared_data, screen_layout)
+
     process_queue = setup_process_queue(process_data)
     message_queue = start_processes(function, shared_data, number_of_processes, process_queue, active_processes)
+
     # TODO: figure a better way to send process data
     send_process_state(active_processes, process_queue, screen, screen_layout)
 
@@ -193,7 +201,7 @@ def _execute(screen, function, process_data, shared_data, number_of_processes, s
     finalize_screen(screen, screen_layout)
 
 
-def execute(function=None, process_data=None, shared_data=None, number_of_processes=None, screen_layout=None):
+def execute(function=None, process_data=None, shared_data=None, number_of_processes=None, init_messages=None, screen_layout=None):
     """ public execute api - spawns child processes as dictated by process data and manages displaying spawned process messages to screen if screen layout is defined
 
         wrapped with KeyboardInterrupt exception to enable user to submit Ctrl+C interrupt to kill all running processes
@@ -201,34 +209,42 @@ def execute(function=None, process_data=None, shared_data=None, number_of_proces
 
         Parameters:
             function (callable): callable object that each spawned process will execute as their target
-            process_data (list): list of lists containing an offset and dictionary of meta-data specific to spawned process at offset
-                [[0, {}], [1, {}], [2, {}]]
+            process_data (list): list of dict where each dict contains meta-data specific to a process
+                [{}, {}, {}]
             shared_data (dict): data to provide all spawned processes
             number_of_processes (int): number of processes to spawn
+            init_messages (list): list of messages to send screen upon startup
             screen_layout (dict): dictionary containing meta-data for how logged messages for each spawned process should be displayed on screen
         Returns:
             int: -1 if user initiated keyboard interrupt to kill processes (Ctrl+C)
     """
+    if not process_data:
+        process_data = [{}]
     if not shared_data:
         shared_data = {}
+    if not init_messages:
+        init_messages = []
     active_processes = {}
+    process_data_offset = [(process_data.index(item), item) for item in process_data]
     try:
         if screen_layout:
             wrapper(
                 _execute,
                 function,
-                process_data,
+                process_data_offset,
                 shared_data,
                 number_of_processes,
+                init_messages,
                 screen_layout,
                 active_processes)
         else:
             _execute(
                 None,
                 function,
-                process_data,
+                process_data_offset,
                 shared_data,
                 number_of_processes,
+                init_messages,
                 None,
                 active_processes)
     except KeyboardInterrupt:
@@ -236,5 +252,4 @@ def execute(function=None, process_data=None, shared_data=None, number_of_proces
         for offset, process in active_processes.items():
             logger.info('killing process for offset {} with process id {}'.format(offset, process.pid))
             process.terminate()
-
         sys.exit(-1)

@@ -111,10 +111,6 @@ def get_screen_map():
 def main():
     execute(
         function=process_networks,
-        process_data=[
-            (0, {})
-        ],
-        shared_data={},
         number_of_processes=1,
         screen_layout=get_screen_map())
 

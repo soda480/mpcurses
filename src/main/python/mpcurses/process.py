@@ -146,7 +146,7 @@ def _execute(screen, function, process_data, shared_data, number_of_processes, i
         Returns:
             None
     """
-    initialize_screen(screen, screen_layout)
+    initialize_screen(screen, screen_layout, len(process_data))
 
     for init_message in init_messages:
         update_screen(init_message, screen, screen_layout)

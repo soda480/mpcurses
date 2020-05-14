@@ -47,7 +47,7 @@ def process_networks(data, shared_data):
             logger.debug('network "{}" was translated'.format(network))
 
 
-def get_screen_map():
+def get_screen_layout():
     return {
         'default': {
             'window': True,
@@ -57,53 +57,55 @@ def get_screen_map():
             'width': 300
         },
         'network': {
+            'position': (1, 0),
             'text': 'Processing Network: 0',
             'text_color': 244,
             'color': 0,
-            'position': (1, 0),
             'clear': True,
             'regex': '^processing network "(?P<value>.*)"$'
         },
         'extracted': {
+            'position': (2, 0),
             'text': 'Networks To Process: 0',
             'text_color': 244,
             'color': 0,
-            'position': (2, 0),
             'regex': '^(?P<value>\d+) networks extracted$'
         },
         'translated': {
+            'position': (3, 0),
             'text': 'Networks Translated: 0',
             'text_color': 244,
             'color': 3,
-            'position': (3, 0),
-            'count': 0,
             'keep_count': True,
             'regex': '^network ".*" was translated$'
         },
         'blacklisted': {
+            'position': (4, 0),
             'text': 'Networks BlackListed: 0',
             'text_color': 244,
             'color': 4,
-            'position': (4, 0),
-            'count': 0,
             'keep_count': True,
             'regex': '^network ".*" is blacklisted$'
         },
         'not_translated': {
+            'position': (5, 0),
             'text': 'Networks Not Translated: 0',
             'text_color': 244,
             'color': 2,
-            'position': (5, 0),
-            'count': 0,
             'keep_count': True,
             'regex': '^network ".*" was not translated$'
         },
-        'counter': {
-            'categories': ['translated', 'blacklisted', 'not_translated'],
-            'text': '.',
+        '_counter_': {
             'position': (6, 0),
-            'counter': True,
-            'ticker': 0
+            'categories': [
+                'translated',
+                'blacklisted',
+                'not_translated'
+            ],
+            'text': '|',
+            # 'modulus': 5,
+            # 'color': 45,
+            # 'regex': '^(?P<value>\d+) networks extracted$'
         }
     }
 
@@ -112,7 +114,7 @@ def main():
     execute(
         function=process_networks,
         number_of_processes=1,
-        screen_layout=get_screen_map())
+        screen_layout=get_screen_layout())
 
 
 if __name__ == '__main__':

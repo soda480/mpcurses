@@ -80,7 +80,7 @@ def update_firmware(process_data, shared_data):
     logger.info('completed firmware update on all servers')
 
 
-def get_screen_map():
+def get_screen_layout():
     return {
         'default': {
             'window': True,
@@ -97,95 +97,95 @@ def get_screen_map():
             'width': 300
         },
         'legend_s1': {
+            'position': (0, 0),
             'text': 'WRN: # of warnings that occurred during a step in the upgrade process',
             'text_color': 243,
-            'position': (0, 0),
             'window_id': 'window_legend'
         },
         'procs_active': {
+            'position': (1, 1),
             'text': 'Active: 0',
             'text_color': 245,
             'color': 7,
-            'position': (1, 1),
             'regex': '^mpcurses: number of active processes (?P<value>\d+)$',
             'window_id': 'window_legend'
         },
         'procs_queued': {
+            'position': (1, 20),
             'text': 'Queued: 0',
             'text_color': 245,
             'color': 7,
-            'position': (1, 20),
             'regex': '^mpcurses: number of queued processes (?P<value>\d+)$',
             'window_id': 'window_legend'
         },
         'procs_complete': {
+            'position': (1, 39),
             'text': 'Completed: 0',
             'text_color': 245,
             'color': 7,
-            'position': (1, 39),
             'count': 0,
             'keep_count': True,
             'regex': '^mpcurses: a process has completed$',
             'window_id': 'window_legend'
         },
         'bay_header': {
+            'position': (2, 2),
             'text': 'Bay',
             'text_color': 243,
-            'position': (2, 2)
         },
         'server_header': {
+            'position': (2, 7),
             'text': 'Server Name',
             'text_color': 243,
-            'position': (2, 7)
         },
         'firmware_header': {
+            'position': (2, 34),
             'text': 'F/W',
             'text_color': 243,
-            'position': (2, 34)
         },
         'warning_header': {
+            'position': (2, 41),
             'text': 'WRN',
             'text_color': 243,
-            'position': (2, 41)
         },
         'message_header': {
+            'position': (2, 48),
             'text': 'Status',
             'text_color': 243,
-            'position': (2, 48)
         },
         '_indicator_on': {
+            'position': (3, 0),
             'text': '',
             'replace_text': '->',
             'color': 15,
-            'position': (3, 0),
             'regex': '^executing .* firmware update on server at bay .*$',
-            'table': 'bay_table'
+            'table': True
         },
         '_indicator_off': {
+            'position': (3, 0),
             'text': '',
             'replace_text': '  ',
-            'position': (3, 0),
             'regex': '^processing next bay$',
-            'table': 'bay_table'
+            'table': True
         },
         'bay': {
+            'position': (3, 2),
             'text': '',
             'color': 0,
-            'position': (3, 2),
             'regex': "^'bay' is '(?P<value>\d+)'$",
-            'table': 'bay_table'
+            'table': True
         },
         'servername': {
+            'position': (3, 7),
             'text': '',
             'color': 0,
-            'position': (3, 7),
             'regex': "^'servername' is '(?P<value>.*)'$",
-            'table': 'bay_table'
+            'table': True
         },
         'firmware': {
+            'position': (3, 34),
             'text': '',
             'color': 0,
-            'position': (3, 34),
             'regex': "^'firmware version' is '(?P<value>.*)'$",
             'effects': [
                 {
@@ -193,21 +193,20 @@ def get_screen_map():
                     'color': 3
                 }
             ],
-            'table': 'bay_table'
+            'table': True
         },
         'warning': {
+            'position': (3, 41),
             'text': '',
             'color': 4,
-            'position': (3, 41),
             'keep_count': True,
             'regex': '^WARN:.*$',
-            'offset': {},
-            'table': True,
+            'table': True
         },
         'message': {
+            'position': (3, 48),
             'text': '',
             'color': 0,
-            'position': (3, 48),
             'clear': True,
             'regex': '^(?!mpcurses:.*)(?!processing next bay)(?!DONE)(?!INFO:.*)(?P<value>.*)$',
             'effects': [
@@ -222,7 +221,7 @@ def get_screen_map():
                     'color': 2
                 }
             ],
-            'table': 'bay_table'
+            'table': True
         }
     }
 
@@ -241,7 +240,7 @@ def main():
         function=update_firmware,
         process_data=servers,
         number_of_processes=5,
-        screen_layout=get_screen_map())
+        screen_layout=get_screen_layout())
 
 
 if __name__ == '__main__':

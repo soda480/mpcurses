@@ -1,5 +1,5 @@
 
-# Copyright (c) 2020 Emilio Reyes (soda480@gmail.com)
+# Copyright (c) 2020 Intel Corporation
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -42,11 +42,11 @@ use_plugin('python.distutils')
 
 name = 'mpcurses'
 authors = [
-    Author('Emilio Reyes', 'soda480@gmail.com')
+    Author('Emilio Reyes', 'emilio.reyes@intel.com')
 ]
 summary = 'A framework that exposes a simple set of APIs enabling multi-process integration with the curses screen painting library'
 url = 'https://github.com/soda480/mpcurses'
-version = '0.0.2'
+version = '0.0.3'
 default_task = [
     'clean',
     'analyze',

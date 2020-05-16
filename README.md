@@ -23,9 +23,10 @@ The result is a screen that is being updated dynamically from one or more concur
 
 | Sample             | Description/Features       |
 |--------------------|----------------------------|
-| samples/sample1.py | prime number counter / single process, screen update, count  |
-| samples/sample2.py | network name translator/ single process, screen update, count, ticker   |
+| samples/sample1.py | prime number counter / single process, screen update, count |
+| samples/sample2.py | network name translator/ single process, screen update, count, indicator  |
 | samples/sample3.py | firmware update simulator / multi-process, screen table update, count, indicator, process status |
+| samples/sample4.py | prime number counter / multi-process, screen update, count, progress bar |
 
 
 #### Running the samples ####
@@ -47,22 +48,7 @@ docker container run \
 mpcurses:latest \
 python samples/sample1.py
 ```
-
-```bash
-docker container run \
---rm \
--it \
-mpcurses:latest \
-python samples/sample2.py
-```
-
-```bash
-docker container run \
---rm \
--it \
-mpcurses:latest \
-python samples/sample3.py
-```
+NOTE: replace sample1.py with any of the samples described above (1-4).
 
 ### Development ###
 

@@ -20,6 +20,10 @@ from mock import Mock
 from mock import MagicMock
 
 from mpcurses.screen import initialize_colors
+from mpcurses.screen import create_windows
+from mpcurses.screen import assign_windows
+from mpcurses.screen import initialize_counter
+from mpcurses.screen import initialize_keep_count
 from mpcurses.screen import initialize_screen
 from mpcurses.screen import finalize_screen
 from mpcurses.screen import get_category_values
@@ -29,6 +33,12 @@ from mpcurses.screen import blink_running
 from mpcurses.screen import echo_to_screen
 from mpcurses.screen import refresh_screen
 from mpcurses.screen import get_position
+from mpcurses.screen import process_counter
+from mpcurses.screen import get_category_color
+from mpcurses.screen import get_category_count
+from mpcurses.screen import get_category_value
+from mpcurses.screen import get_category_x_pos
+from mpcurses.screen import get_category_y_pos
 
 
 class TestScreen(unittest.TestCase):
@@ -55,95 +65,227 @@ class TestScreen(unittest.TestCase):
         self.assertEqual(curses_mock.init_pair.mock_calls[0], init_pair_call_1)
         self.assertEqual(curses_mock.init_pair.mock_calls[1], init_pair_call_2)
 
-    @patch('mpcurses.screen.initialize_colors')
-    @patch('mpcurses.screen.curses.curs_set')
-    @patch('mpcurses.screen.curses.color_pair')
     @patch('mpcurses.screen.curses.newwin')
-    def test__initialize_screen_ShouldDoExpected_When_ScreenLayoutText(self, newwin_patch, color_pair, *patches):
-        window_mock = Mock()
-        newwin_patch.return_value = window_mock
-
-        color_pair_mock = Mock()
-        color_pair.return_value = color_pair_mock
-        screen_mock = Mock()
+    def test__create_windows_Should_ReturnExpected_When_Called(self, newwin_patch, *patches):
+        window1_mock = Mock()
+        window2_mock = Mock()
+        newwin_patch.side_effect = [
+            window1_mock,
+            window2_mock,
+        ]
         screen_layout = {
             'default': {
                 'window': True,
                 'begin_y': 0,
                 'begin_x': 0,
-                'height': 20,
+                'height': 21,
                 'width': 300
             },
-            'log_file': {
-                'text': 'LOGFILE:',
-                'text_color': 1,
-                'color': 1,
-                'position': (1, 0)
-            }
-        }
-        initialize_screen(screen_mock, screen_layout)
-
-        window_mock.addstr.assert_called_with(1, 0, 'LOGFILE:', color_pair_mock)
-        window_mock.refresh.assert_called_with()
-
-    @patch('mpcurses.screen.initialize_colors')
-    @patch('mpcurses.screen.curses.curs_set')
-    @patch('mpcurses.screen.curses.color_pair')
-    @patch('mpcurses.screen.curses.newwin')
-    def test__initialize_screen_ShouldDoExpected_When_ScreenLayoutNumber(self, newwin_patch, *patches):
-        window_mock = Mock()
-        newwin_patch.return_value = window_mock
-
-        screen_mock = Mock()
-        screen_layout = {
-            'default': {
-                'window': True,
-                'begin_y': 0,
-                'begin_x': 0,
-                'height': 20,
-                'width': 300
-            },
-            'extracted': {
-                'text': 'Networks Extracted:',
-                'text_color': 1,
-                'color': 4,
-                'position': (4, 0),
-                'number': True
-            }
-        }
-        initialize_screen(screen_mock, screen_layout)
-
-        window_mock.addstr.assert_called_with(4, 20, '0')
-        window_mock.refresh.assert_called_with()
-
-    @patch('mpcurses.screen.initialize_colors')
-    @patch('mpcurses.screen.curses.curs_set')
-    @patch('mpcurses.screen.curses.color_pair')
-    @patch('mpcurses.screen.curses.newwin')
-    def test__initialize_screen_ShouldSetWindow_When_WindowIdNotDefault(self, newwin_patch, *patches):
-        window_mock = Mock()
-        newwin_patch.return_value = window_mock
-        screen_layout = {
             'window_legend': {
                 'window': True,
-                'begin_y': 20,
+                'begin_y': 22,
                 'begin_x': 0,
                 'height': 3,
                 'width': 300
-            },
-            'extracted': {
-                'text': 'Networks Extracted:',
-                'text_color': 1,
-                'color': 4,
-                'position': (4, 0),
-                'number': True,
-                'window_id': 'window_legend'
             }
         }
-        screen_mock = Mock()
-        initialize_screen(screen_mock, screen_layout)
+        result = create_windows(screen_layout)
+        expected_result = {
+            'default': window1_mock,
+            'window_legend': window2_mock,
+        }
+        self.assertEqual(result, expected_result)
+        newwin_call1 = call(21, 300, 0, 0)
+        newwin_call2 = call(3, 300, 22, 0)
+        self.assertTrue(newwin_call1 in newwin_patch.mock_calls)
+        self.assertTrue(newwin_call2 in newwin_patch.mock_calls)
 
-        self.assertEqual(screen_layout['extracted']['_window'], window_mock)
+    def test__assign_windows_Should_UpdateScrenLayout_When_Called(self, *patches):
+        window1_mock = Mock()
+        window2_mock = Mock()
+        screen_layout = {
+            'default': {
+            },
+            'window_legend': {
+            },
+            'procs_complete': {
+                'window_id': 'window_legend',
+            },
+            'bay_header': {
+            },
+            'server_header': {
+            },
+        }
+        windows = {
+            'default': window1_mock,
+            'window_legend': window2_mock,
+        }
+        assign_windows(windows, screen_layout)
+        expected_screen_layout = {
+            'default': {
+                '_window': window1_mock
+            },
+            'window_legend': {
+                '_window': window1_mock
+            },
+            'procs_complete': {
+                'window_id': 'window_legend',
+                '_window': window2_mock
+            },
+            'bay_header': {
+                '_window': window1_mock
+            },
+            'server_header': {
+                '_window': window1_mock
+            },
+        }
+        self.assertEqual(screen_layout, expected_screen_layout)
+
+    def test__initialize_counter_Should_UpdateScreenLayout_When_Called(self, *patches):
+        screen_layout = {
+            '_counter_': {
+                'modulus': 5
+            }
+        }
+        initialize_counter(3, screen_layout)
+        expected_screen_layout = {
+            '_counter_': {
+                'modulus': 5,
+                0: {
+                    '_count': 0,
+                    '_modulus_count': 0
+                },
+                1: {
+                    '_count': 0,
+                    '_modulus_count': 0
+                },
+                2: {
+                    '_count': 0,
+                    '_modulus_count': 0
+                }
+            }
+        }
+        self.assertEqual(screen_layout, expected_screen_layout)
+
+    def test__initialize_keep_count_Should_UpdateScreenLayout_When_Table(self, *patches):
+        screen_layout = {
+            'networks': {
+                'table': True
+            }
+        }
+        initialize_keep_count('networks', 3, screen_layout)
+        expected_screen_layout = {
+            'networks': {
+                'table': True,
+                0: {
+                    '_count': 0
+                },
+                1: {
+                    '_count': 0
+                },
+                2: {
+                    '_count': 0
+                }
+            }
+        }
+        self.assertEqual(screen_layout, expected_screen_layout)
+
+    def test__initialize_keep_count_Should_UpdateScreenLayout_When_NoTable(self, *patches):
+        screen_layout = {
+            'networks': {
+            }
+        }
+        initialize_keep_count('networks', 3, screen_layout)
+        expected_screen_layout = {
+            'networks': {
+                '_count': 0
+            }
+        }
+        self.assertEqual(screen_layout, expected_screen_layout)
+
+    @patch('mpcurses.screen.initialize_colors')
+    def test__initialize_screen_Should_Return_When_NoScreen(self, initialize_colors_patch, *patches):
+        initialize_screen(None, {}, 3)
+        initialize_colors_patch.assert_not_called()
+
+    @patch('mpcurses.screen.assign_windows')
+    @patch('mpcurses.screen.create_windows')
+    @patch('mpcurses.screen.curses.curs_set')
+    @patch('mpcurses.screen.initialize_colors')
+    @patch('mpcurses.screen.curses.color_pair')
+    @patch('mpcurses.screen.initialize_keep_count')
+    @patch('mpcurses.screen.initialize_counter')
+    def test__initialize_screen_Should_CallExpected_When_Called(self, initialize_counter_patch, initialize_keep_count_patch, color_pair_patch, *patches):
+        color_pair_mock = Mock()
+        color_pair_patch.return_value = color_pair_mock
+        screen_mock = Mock()
+        default_window_mock = Mock()
+        screen_layout = {
+            'default': {
+                'window': True,
+                'begin_y': 0,
+                'begin_x': 0,
+                'height': 27,
+                'width': 300
+            },
+            'translated': {
+                'position': (3, 0),
+                'text': 'Networks Translated: 0',
+                'text_color': 244,
+                'color': 3,
+                'keep_count': True,
+                'regex': '^network ".*" was translated$',
+                '_window': default_window_mock,
+            },
+            '_counter_': {
+                'position': (6, 0),
+                'categories': [
+                    'translated',
+                    'blacklisted',
+                    'not_translated'
+                ],
+                'text': '|',
+            }
+        }
+        initialize_screen(screen_mock, screen_layout, 1)
+        initialize_counter_patch.assert_called_once_with(1, screen_layout)
+        default_window_mock.addstr.assert_called_once_with(3, 0, 'Networks Translated: 0', color_pair_mock)
+        initialize_keep_count_patch.assert_called_once_with('translated', 1, screen_layout)
+
+    @patch('mpcurses.screen.assign_windows')
+    @patch('mpcurses.screen.create_windows')
+    @patch('mpcurses.screen.curses.curs_set')
+    @patch('mpcurses.screen.initialize_colors')
+    def test__initialize_screen_Should_CallScreenRefresh_When_Called(self, *patches):
+        screen_mock = Mock()
+        initialize_screen(screen_mock, {}, 1)
+        screen_mock.refresh.assert_called_once_with()
+
+    @patch('mpcurses.screen.assign_windows')
+    @patch('mpcurses.screen.curses.curs_set')
+    @patch('mpcurses.screen.initialize_colors')
+    @patch('mpcurses.screen.create_windows')
+    def test__initialize_screen_Should_CallWindowRefresh_When_Called(self, create_windows_patch, *patches):
+        window1_mock = Mock()
+        window2_mock = Mock()
+        create_windows_patch.return_value = {
+            'category1': window1_mock,
+            'category2': window2_mock
+        }
+        screen_mock = Mock()
+        initialize_screen(screen_mock, {}, 1)
+        window1_mock.refresh.assert_called_once_with()
+        window2_mock.refresh.assert_called_once_with()
+
+    def test__finialize_screen_Should_Return_When_NoScreen(self, *patches):
+        window_mock = Mock()
+        screen_layout = {
+            'default': {
+                '_window': window_mock
+            }
+        }
+        finalize_screen(None, screen_layout)
+        window_mock.move.assert_not_called()
 
     @patch('mpcurses.screen.initialize_colors')
     @patch('mpcurses.screen.curses')
@@ -177,99 +319,42 @@ class TestScreen(unittest.TestCase):
         window_mock.getch.assert_called_with()
         curses_patch.curs_set.assert_called_with(2)
 
-    @unittest.skip('skip - intermittent error')
-    def test__get_category_values_Should_ReturnExpected_When_MessageLessThanAllowedCharacters(self, *patches):
+    def test__get_category_values_Should_ReturnExpected_When_Match(self, *patches):
         screen_layout = {
             'firmware': {
-                'text': '',
-                'color': 0,
-                'position': (5, 47),
                 'regex': '^.* firmware version for bay \\d+ is "(?P<value>.*)"$'
             },
             'start': {
-                'text': '',
-                'color': 0,
-                'position': (5, 57),
                 'regex': '^processing bay \\d+ at: (?P<value>.*)$'
             },
             'message': {
-                'text': '',
-                'color': 0,
-                'position': (5, 67),
-                'clear': True,
                 'regex': '^(?P<value>.*)$',
-                'effects': [
-                    {
-                        'regex': '.* was successfull.*',
-                        'color': 3
-                    }, {
-                        'regex': '.* failed.*',
-                        'color': 2
-                    }, {
-                        'regex': 'ERROR:.*',
-                        'color': 2
-                    }, {
-                        'regex': '.*already present.*',
-                        'color': 16
-                    }
-                ]
             },
             'start_new_bay': {
-                'iterator': True,
-                'position': (5, 0),
-                'insert_lines': 3,
                 'regex': '^processing next bay$'
             }
         }
 
-        message = 'processing bay 1 at: 01/30/18 13:24'
+        message = 'processing bay 4 at: -date-time-'
         result = get_category_values(message, screen_layout)
         expected_result = [
-            ('start', '01/30/18 13:24'),
-            ('message', 'processing bay 1 at: 01/30/18 13:24'),
+            ('start', '-date-time-'),
+            ('message', 'processing bay 4 at: -date-time-')
         ]
         self.assertEqual(result, expected_result)
 
-    def test__get_category_values_Should_ReturnReducedValue_When_MessageGreaterThanAllowedCharacters(self, *patches):
+    def test__get_category_values_Should_ReturnReducedValue_When_MatchGreaterThanAllowed(self, *patches):
         screen_layout = {
             'firmware': {
-                'text': '',
-                'color': 0,
-                'position': (5, 47),
                 'regex': '^.* firmware version for bay \\d+ is "(?P<value>.*)"$'
             },
             'start': {
-                'text': '',
-                'color': 0,
-                'position': (5, 57),
                 'regex': '^processing bay \\d+ at: (?P<value>.*)$'
             },
             'message': {
-                'text': '',
-                'color': 0,
-                'position': (5, 67),
-                'clear': True,
                 'regex': '^(?P<value>.*)$',
-                'effects': [
-                    {
-                        'regex': '.* was successfull.*',
-                        'color': 3
-                    }, {
-                        'regex': '.* failed.*',
-                        'color': 2
-                    }, {
-                        'regex': 'ERROR:.*',
-                        'color': 2
-                    }, {
-                        'regex': '.*already present.*',
-                        'color': 16
-                    }
-                ]
             },
             'start_new_bay': {
-                'iterator': True,
-                'position': (5, 0),
-                'insert_lines': 3,
                 'regex': '^processing next bay$'
             }
         }
@@ -281,339 +366,366 @@ class TestScreen(unittest.TestCase):
         ]
         self.assertEqual(result, expected_result)
 
-    @patch('mpcurses.screen.curses')
-    @patch('mpcurses.screen.get_category_values')
-    def test__update_screen_Should_Return_When_GetCategoryValuesReturnsEmptyList(self, get_category_values_patch, *patches):
-        screen_layout = {
-            'firmware': {
-                'text': '',
-                'color': 0,
-                'position': (5, 47),
-                'regex': '^.* firmware version for bay \\d+ is "(?P<value>.*)"$'
-            },
-            'start': {
-                'text': '',
-                'color': 0,
-                'position': (5, 57),
-                'regex': '^processing bay \\d+ at: (?P<value>.*)$'
-            },
-            'message': {
-                'text': '',
-                'color': 0,
-                'position': (5, 67),
-                'clear': True,
-                'regex': '^(?P<value>.*)$',
-                'effects': [
-                    {
-                        'regex': '.* was successfull.*',
-                        'color': 3
-                    }, {
-                        'regex': '.* failed.*',
-                        'color': 2
-                    }, {
-                        'regex': 'ERROR:.*',
-                        'color': 2
-                    }, {
-                        'regex': '.*already present.*',
-                        'color': 16
-                    }
-                ]
-            },
-            'start_new_bay': {
-                'iterator': True,
-                'position': (5, 0),
-                'insert_lines': 3,
-                'regex': '^processing next bay$'
-            }
-        }
-        get_category_values_patch.return_value = [
-        ]
-        message = 'processing bay 1 at: 01/30/18 13:24'
-        screen_mock = Mock()
-
-        update_screen(message, screen_mock, screen_layout)
-
-        self.assertEqual(len(screen_mock.refresh.mock_calls), 0)
-
-    @patch('mpcurses.screen.curses')
-    @patch('mpcurses.screen.get_category_values')
-    def test__update_screen_Should_CallExpected_When_Called(self, get_category_values_patch, *patches):
-        window_mock = Mock()
-        screen_layout = {
-            'firmware': {
-                'text': '',
-                'color': 0,
-                'position': (5, 47),
-                'regex': '^.* firmware version for bay \\d+ is "(?P<value>.*)"$',
-                '_window': window_mock
-            },
-            'start': {
-                'text': '',
-                'color': 0,
-                'position': (5, 57),
-                'regex': '^processing bay \\d+ at: (?P<value>.*)$',
-                '_window': window_mock
-            },
-            'message': {
-                'text': '',
-                'color': 0,
-                'position': (5, 67),
-                'clear': True,
-                'regex': '^(?P<value>.*)$',
-                '_window': window_mock,
-                'effects': [
-                    {
-                        'regex': '.* was successfull.*',
-                        'color': 3
-                    }, {
-                        'regex': '.* failed.*',
-                        'color': 2
-                    }, {
-                        'regex': 'ERROR:.*',
-                        'color': 2
-                    }, {
-                        'regex': '.*already present.*',
-                        'color': 16
-                    }
-                ]
-            },
-            'start_new_bay': {
-                'iterator': True,
-                'position': (5, 0),
-                'insert_lines': 3,
-                'regex': '^processing next bay$',
-                '_window': window_mock
-            }
-        }
-        get_category_values_patch.return_value = [
-            ('start', '01/30/18 13:24'),
-            ('message', 'processing bay 1 at: 01/30/18 13:24'),
-        ]
-        message = 'processing bay 1 at: 01/30/18 13:24'
-        screen_mock = Mock()
-
-        update_screen(message, screen_mock, screen_layout)
-
-        self.assertEqual(len(window_mock.refresh.mock_calls), 2)
-
-    @patch('mpcurses.screen.curses')
-    @patch('mpcurses.screen.get_category_values')
-    def test__update_screen_Should_CallExpected_When_ReplaceText(self, get_category_values_patch, curses_patch, *patches):
-        window_mock = Mock()
-        screen_layout = {
-            'start': {
-                'text': '',
-                'replace_text': '*',
-                'color': 0,
-                'position': (5, 57),
-                'regex': '^processing bay \\d+ at: (?P<value>.*)$',
-                '_window': window_mock
-            }
-        }
-        get_category_values_patch.return_value = [
-            ('start', 'processing bay 1 at: 01/30/18 13:24'),
-        ]
-        message = 'processing bay 1 at: 01/30/18 13:24'
-        screen_mock = Mock()
-        update_screen(message, screen_mock, screen_layout)
-
-        window_mock.addstr.assert_called_with(5, 57, '*', curses_patch.color_pair(0))
-
-    @patch('mpcurses.screen.curses')
-    @patch('mpcurses.screen.get_category_values')
-    def test__update_screen_Should_CallExpected_When_KeepCount(self, get_category_values_patch, curses_patch, *patches):
-        window_mock = Mock()
-        screen_layout = {
-            'things': {
-                'text': 'Things',
-                'color': 0,
-                'text_color': 2,
-                'position': (4, 0),
-                'keep_count': True,
-                'count': 20,
-                '_window': window_mock
-            },
-            'firmware': {
-                'text': '',
-                'color': 0,
-                'position': (5, 47),
-                'regex': '^.* firmware version for bay \\d+ is "(?P<value>.*)"$',
-                '_window': window_mock
-            },
-            'start': {
-                'text': '',
-                'color': 0,
-                'position': (5, 57),
-                'regex': '^processing bay \\d+ at: (?P<value>.*)$',
-                '_window': window_mock
-            },
-            'message': {
-                'text': '',
-                'color': 0,
-                'position': (5, 67),
-                'clear': True,
-                'regex': '^(?P<value>.*)$',
-                '_window': window_mock,
-                'effects': [
-                    {
-                        'regex': '.* was successfull.*',
-                        'color': 3
-                    }, {
-                        'regex': '.* failed.*',
-                        'color': 2
-                    }, {
-                        'regex': 'ERROR:.*',
-                        'color': 2
-                    }, {
-                        'regex': '.*already present.*',
-                        'color': 16
-                    }
-                ]
-            },
-            'start_new_bay': {
-                'iterator': True,
-                'position': (5, 0),
-                'insert_lines': 3,
-                'regex': '^processing next bay$',
-                '_window': window_mock
-            }
-        }
-        get_category_values_patch.return_value = [
-            ('things', 'Thing 21'),
-        ]
-        message = 'message'
-        screen_mock = Mock()
-
-        update_screen(message, screen_mock, screen_layout)
-
-        window_mock.addstr.assert_called_with(4, 8, '21', curses_patch.color_pair(0))
-        self.assertEqual(len(window_mock.refresh.mock_calls), 1)
-
-    @patch('mpcurses.screen.curses')
-    @patch('mpcurses.screen.get_category_values')
-    def test__update_screen_Should_CallExpected_When_EffectsMatch(self, get_category_values_patch, curses_patch, *patches):
-        window_mock = Mock()
-        screen_layout = {
-            'things': {
-                'text': 'Things',
-                'color': 0,
-                'text_color': 2,
-                'position': (4, 0),
-                'keep_count': True,
-                'count': 20,
-                '_window': window_mock
-            },
-            'firmware': {
-                'text': '',
-                'color': 0,
-                'position': (5, 47),
-                'regex': '^.* firmware version for bay \\d+ is "(?P<value>.*)"$',
-                '_window': window_mock
-            },
-            'start': {
-                'text': '',
-                'color': 0,
-                'position': (5, 57),
-                'regex': '^processing bay \\d+ at: (?P<value>.*)$',
-                '_window': window_mock
-            },
-            'message': {
-                'text': '',
-                'color': 0,
-                'position': (5, 67),
-                'clear': True,
-                'regex': '^(?P<value>.*)$',
-                '_window': window_mock,
-                'effects': [
-                    {
-                        'regex': '.* was successfull.*',
-                        'color': 3
-                    }, {
-                        'regex': '.* failed.*',
-                        'color': 2
-                    }, {
-                        'regex': 'ERROR:.*',
-                        'color': 2
-                    }, {
-                        'regex': '.*already present.*',
-                        'color': 16
-                    }
-                ]
-            },
-            'start_new_bay': {
-                'iterator': True,
-                'position': (5, 0),
-                'insert_lines': 3,
-                'regex': '^processing next bay$',
-                '_window': window_mock
-            }
-        }
-        get_category_values_patch.return_value = [
-            ('message', 'ERROR: it crashed'),
-        ]
-        message = 'ERROR: it crashed'
-        screen_mock = Mock()
-
-        update_screen(message, screen_mock, screen_layout)
-
-        window_mock.addstr.assert_called_with(5, 67, 'ERROR: it crashed', curses_patch.color_pair(2))
-        self.assertEqual(len(window_mock.refresh.mock_calls), 1)
-
-    @patch('mpcurses.screen.curses')
-    @patch('mpcurses.screen.get_category_values')
-    def test__update_screen_Should_CallExpected_When_Counter(self, get_category_values_patch, curses_patch, *patches):
+    @patch('mpcurses.screen.curses.color_pair')
+    def test__process_counter_Should_CallExpected_When_CategoryModulus(self, color_pair_patch, *patches):
         window_mock = Mock()
         screen_layout = {
             'translated': {
-                'position': (6, 0),
-                'color': 10,
-                '_window': window_mock
+                'color': 31,
             },
-            'counter': {
-                'categories': ['translated', 'blacklisted', 'not_translated'],
-                'text': '.',
+            '_counter_': {
                 'position': (6, 0),
-                'counter': True,
-                'ticker': 30,
-                '_window': window_mock
+                'categories': [
+                    'translated',
+                ],
+                'text': '|',
+                'modulus': 5,
+                'color': 21,
+                'regex': '^(?P<value>\\d+) networks extracted$',
+                1: {
+                    '_count': 44,
+                    '_modulus_count': 3
+                },
             }
         }
-        get_category_values_patch.return_value = [
-            ('translated', 'something was translated'),
-        ]
-        message = 'something was translated'
-        screen_mock = Mock()
+        process_counter(1, 'translated', 10, window_mock, screen_layout)
+        window_mock.addstr.assert_called_once_with(7, 4, '|', color_pair_patch.return_value)
+        color_pair_patch.assert_called_once_with(21)
 
-        update_screen(message, screen_mock, screen_layout)
-
-        window_mock.addstr.assert_called_with(6, 30, '.', curses_patch.color_pair(10))
-        self.assertEqual(len(window_mock.refresh.mock_calls), 1)
-
-    @patch('mpcurses.screen.curses')
-    @patch('mpcurses.screen.sanitize_message')
-    @patch('mpcurses.screen.get_category_values')
-    def test__update_screen_Should_CallExpected_When_Table(self, get_category_values_patch, sanitize_message_patch, curses_patch, *patches):
-        sanitize_message_patch.return_value = (6, 'servername for bay 1 is server1.amr.corp.intel.com')
+    @patch('mpcurses.screen.curses.color_pair')
+    def test__process_counter_Should_CallExpected_When_CategoryNoModulus(self, color_pair_patch, *patches):
         window_mock = Mock()
         screen_layout = {
-            'server': {
+            'translated': {
+                'color': 31,
+            },
+            '_counter_': {
+                'position': (6, 0),
+                'categories': [
+                    'translated',
+                ],
+                'text': '|',
+                1: {
+                    '_count': 44,
+                },
+            }
+        }
+        process_counter(1, 'translated', 10, window_mock, screen_layout)
+        window_mock.addstr.assert_called_once_with(7, 44, '|', color_pair_patch.return_value)
+        color_pair_patch.assert_called_once_with(31)
+
+    @patch('mpcurses.screen.curses.color_pair')
+    def test__process_counter_Should_CallExpected_When_Counter(self, color_pair_patch, *patches):
+        window_mock = Mock()
+        screen_layout = {
+            '_counter_': {
+                'position': (6, 0),
+                'categories': [
+                    'translated',
+                ],
+                'text': '|',
+                'modulus': 5,
+                'color': 45,
+                'regex': '^(?P<value>\\d+) networks extracted$',
+                1: {
+                    '_count': 0,
+                    '_modulus_count': 0
+                },
+            }
+        }
+        process_counter(1, '_counter_', 100, window_mock, screen_layout)
+        spaces = ' ' * 20  # 100/5
+        window_mock.addstr.assert_called_once_with(7, 0, '[{}]'.format(spaces), color_pair_patch.return_value)
+        color_pair_patch.assert_called_once_with(45)
+
+    def test__get_category_color_Should_ReturnExpected_When_EffectMatch(self, *patches):
+        screen_layout = {
+            'firmware': {
+                'color': 1,
+                'effects': [
+                    {
+                        'regex': '.*2.64.*$',
+                        'color': 3
+                    }
+                ],
+            }
+        }
+        result = get_category_color('firmware', 'firmware is: 2.64.1', screen_layout)
+        expected_result = 3
+        self.assertEqual(result, expected_result)
+
+    def test__get_category_color_Should_ReturnExpected_When_NoEffectMatch(self, *patches):
+        screen_layout = {
+            'firmware': {
+                'color': 1,
+                'effects': [
+                    {
+                        'regex': '.*2.64.*$',
+                        'color': 3
+                    }
+                ],
+            }
+        }
+        result = get_category_color('firmware', 'firmware is: 4.24.1', screen_layout)
+        expected_result = 1
+        self.assertEqual(result, expected_result)
+
+    def test__get_category_count_Should_ReturnExpected_When_Table(self, *patches):
+        screen_layout = {
+            'translated': {
+                'table': True,
+                3: {
+                    '_count': 32
+                }
+            }
+        }
+        result = get_category_count('translated', 3, screen_layout)
+        expected_result = '33'
+        self.assertEqual(result, expected_result)
+
+    def test__get_category_count_Should_ReturnExpected_When_NoTable(self, *patches):
+        screen_layout = {
+            'translated': {
+                '_count': 21
+            }
+        }
+        result = get_category_count('translated', 3, screen_layout)
+        expected_result = '22'
+        self.assertEqual(result, expected_result)
+
+    @patch('mpcurses.screen.get_category_count')
+    def test__get_category_value_Should_ReturnGetCategoryCountResult_When_KeepCountNoReplaceText(self, get_category_count_patch, *patches):
+        screen_layout = {
+            'translated': {
+                'keep_count': True
+            }
+        }
+        result = get_category_value('translated', 1, '-initial-value-', screen_layout)
+        expected_result = get_category_count_patch.return_value
+        self.assertEqual(result, expected_result)
+
+    @patch('mpcurses.screen.get_category_count')
+    def test__get_category_value_Should_ReturnReplaceText_When_KeepCountAndReplaceText(self, *patches):
+        screen_layout = {
+            'translated': {
+                'keep_count': True,
+                'replace_text': '*'
+            }
+        }
+        result = get_category_value('translated', 1, '-initial-value-', screen_layout)
+        expected_result = '*'
+        self.assertEqual(result, expected_result)
+
+    @patch('mpcurses.screen.get_category_count')
+    def test__get_category_value_Should_ReturnInitialValue_When_NoKeepCountAndNoReplaceText(self, *patches):
+        screen_layout = {
+            'translated': {
+            }
+        }
+        result = get_category_value('translated', 1, '-initial-value-', screen_layout)
+        expected_result = '-initial-value-'
+        self.assertEqual(result, expected_result)
+
+    @patch('mpcurses.screen.get_position')
+    def test__get_category_x_pos_Should_ReturnExpected_When_Text(self, get_position_patch, *patches):
+        get_position_patch.return_value = 6
+        screen_layout = {
+            'start': {
+                'position': (5, 12),
+                'text': 'Title:',
+            }
+        }
+        result = get_category_x_pos('start', screen_layout)
+        expected_result = 19
+        self.assertEqual(result, expected_result)
+
+    @patch('mpcurses.screen.get_position')
+    def test__get_category_x_pos_Should_ReturnExpected_When_NoText(self, get_position_patch, *patches):
+        get_position_patch.return_value = 6
+        screen_layout = {
+            'start': {
+                'position': (5, 12),
+            }
+        }
+        result = get_category_x_pos('start', screen_layout)
+        expected_result = 12
+        self.assertEqual(result, expected_result)
+
+    def test__get_category_y_pos_Should_ReturnExpected_When_Table(self, *patches):
+        screen_layout = {
+            'start': {
+                'position': (5, 12),
+                'table': True
+            }
+        }
+        result = get_category_y_pos('start', 4, screen_layout)
+        expected_result = 9
+        self.assertEqual(result, expected_result)
+
+    def test__get_category_y_pos_Should_ReturnExpected_When_NoTable(self, *patches):
+        screen_layout = {
+            'start': {
+                'position': (5, 12),
+            }
+        }
+        result = get_category_y_pos('start', 4, screen_layout)
+        expected_result = 5
+        self.assertEqual(result, expected_result)
+
+    @patch('mpcurses.screen.sanitize_message')
+    def test__update_screen_Should_Return_When_NoScreen(self, sanitize_message_patch, *patches):
+        update_screen('message', None, {})
+        sanitize_message_patch.assert_not_called()
+
+    @patch('mpcurses.screen.get_category_values', return_value=None)
+    @patch('mpcurses.screen.sanitize_message', return_value=(None, None))
+    @patch('mpcurses.screen.logger')
+    def test__update_screen_Should_LogError_When_Exception(self, logger_patch, *patches):
+        update_screen('message', Mock(), {})
+        logger_patch.error.assert_called()
+
+    @patch('mpcurses.screen.curses.color_pair')
+    @patch('mpcurses.screen.get_category_values')
+    @patch('mpcurses.screen.sanitize_message')
+    def test__update_screen_Should_CallExpected_When_ReplaceText(self, sanitize_message_patch, get_category_values_patch, color_pair_patch, *patches):
+        sanitize_message_patch.return_value = (5, 'processing bay 5 at: 01/30/18 13:24')
+        get_category_values_patch.return_value = [
+            ['start', 'processing bay 5 at: 01/30/18 13:24'],
+        ]
+        window_mock = Mock()
+        screen_layout = {
+            'start': {
+                'position': (5, 57),
                 'text': '',
+                'replace_text': '*',
                 'color': 0,
-                'position': (4, 7),
-                'regex': '^servername for bay \\d+ is "(?P<value>.*)"$',
                 'table': True,
                 '_window': window_mock
             }
         }
-        get_category_values_patch.return_value = [
-            ('server', 'server1.amr.corp.intel.com'),
-        ]
-        message = '#6-servername for bay 1 is server1.amr.corp.intel.com'
+        message = '#5-processing bay 5 at: 01/30/18 13:24'
         screen_mock = Mock()
-
         update_screen(message, screen_mock, screen_layout)
+        window_mock.addstr.assert_called_with(10, 57, '*', color_pair_patch.return_value)
+        color_pair_patch.assert_called_once_with(0)
 
-        self.assertEqual(window_mock.addstr.mock_calls[0], call(10, 7, 'server1.amr.corp.intel.com', curses_patch.color_pair(0)))
+    @patch('mpcurses.screen.curses.color_pair')
+    @patch('mpcurses.screen.get_category_values')
+    @patch('mpcurses.screen.sanitize_message')
+    def test__update_screen_Should_CallExpected_When_Effects(self, sanitize_message_patch, get_category_values_patch, color_pair_patch, *patches):
+        sanitize_message_patch.return_value = (5, 'firmware is: 2.64.1')
+        get_category_values_patch.return_value = [
+            ['firmware', '2.64.1'],
+        ]
+        window_mock = Mock()
+        screen_layout = {
+            'firmware': {
+                'position': (3, 34),
+                'color': 1,
+                'effects': [
+                    {
+                        'regex': '.*2.64.*$',
+                        'color': 3
+                    }
+                ],
+                'table': True,
+                '_window': window_mock
+            }
+        }
+        message = '#5-firmware is: 2.64.1'
+        screen_mock = Mock()
+        update_screen(message, screen_mock, screen_layout)
+        window_mock.addstr.assert_called_with(8, 34, '2.64.1', color_pair_patch.return_value)
+        color_pair_patch.assert_called_once_with(3)
+
+    @patch('mpcurses.screen.curses.color_pair')
+    @patch('mpcurses.screen.get_category_values')
+    @patch('mpcurses.screen.sanitize_message')
+    def test__update_screen_Should_CallExpected_When_Clear(self, sanitize_message_patch, get_category_values_patch, color_pair_patch, *patches):
+        sanitize_message_patch.return_value = (4, 'checking 121372')
+        get_category_values_patch.return_value = [
+            ['number', '121372'],
+        ]
+        window_mock = Mock()
+        screen_layout = {
+            'number': {
+                'table': True,
+                'position': (1, 0),
+                'clear': True,
+                '_window': window_mock
+            }
+        }
+        message = '#4-checking 121372'
+        screen_mock = Mock()
+        update_screen(message, screen_mock, screen_layout)
+        window_mock.move.assert_called_once_with(5, 0)
+        window_mock.clrtoeol.assert_called_once_with()
+
+    @patch('mpcurses.screen.process_counter')
+    @patch('mpcurses.screen.curses.color_pair')
+    @patch('mpcurses.screen.get_category_values')
+    @patch('mpcurses.screen.sanitize_message')
+    def test__update_screen_Should_CallExpected_When_TextKeepCountCounterTable(self, sanitize_message_patch, get_category_values_patch, color_pair_patch, process_counter_patch, *patches):
+        sanitize_message_patch.return_value = (3, 'network powerdac1234 was translated')
+        get_category_values_patch.return_value = [
+            ['translated', 'network powerdac1234 was translated'],
+        ]
+        window_mock = Mock()
+        screen_layout = {
+            'translated': {
+                'position': (3, 0),
+                'text': 'Networks Translated: 0',
+                'color': 241,
+                'keep_count': True,
+                'table': True,
+                '_window': window_mock,
+                3: {
+                    '_count': 32
+                }
+            },
+            '_counter_': {
+            }
+        }
+        message = '#3-network powerdac1234 was translated'
+        screen_mock = Mock()
+        update_screen(message, screen_mock, screen_layout)
+        window_mock.addstr.assert_called_with(6, 21, '33', color_pair_patch.return_value)
+        color_pair_patch.assert_called_once_with(241)
+        process_counter_patch.assert_called_once_with(3, 'translated', '33', window_mock, screen_layout)
+
+    @patch('mpcurses.screen.process_counter')
+    @patch('mpcurses.screen.curses.color_pair')
+    @patch('mpcurses.screen.get_category_values')
+    @patch('mpcurses.screen.sanitize_message')
+    def test__update_screen_Should_CallExpected_When_TextKeepCountCounter(self, sanitize_message_patch, get_category_values_patch, color_pair_patch, process_counter_patch, *patches):
+        sanitize_message_patch.return_value = (3, 'network powerdac1234 was translated')
+        get_category_values_patch.return_value = [
+            ['translated', 'network powerdac1234 was translated'],
+        ]
+        window_mock = Mock()
+        screen_layout = {
+            'translated': {
+                'position': (3, 0),
+                'text': 'Networks Translated: 0',
+                'color': 241,
+                'keep_count': True,
+                '_window': window_mock,
+                '_count': 32
+            },
+            '_counter_': {
+            }
+        }
+        message = '#3-network powerdac1234 was translated'
+        screen_mock = Mock()
+        update_screen(message, screen_mock, screen_layout)
+        window_mock.addstr.assert_called_with(3, 21, '33', color_pair_patch.return_value)
+        color_pair_patch.assert_called_once_with(241)
+        process_counter_patch.assert_called_once_with(3, 'translated', '33', window_mock, screen_layout)
+
+    @patch('mpcurses.screen.time')
+    def test__blink_running_Should_Return_When_NoScreen(self, time_patch, *patches):
+        blink_running(None, {})
+        time_patch.assert_not_called()
 
     @patch('mpcurses.screen.time')
     @patch('mpcurses.screen.curses')

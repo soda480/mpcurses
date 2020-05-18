@@ -36,13 +36,6 @@ def check_primes(data, shared_data):
 
 def get_screen_map():
     return {
-        'default': {
-            'window': True,
-            'begin_y': 0,
-            'begin_x': 0,
-            'height': 27,
-            'width': 300
-        },
         'number': {
             'position': (1, 0),
             'text': 'Current Number: -',

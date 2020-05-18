@@ -37,13 +37,6 @@ def check_primes(data, shared_data):
 
 def get_screen_layout():
     return {
-        'default': {
-            'window': True,
-            'begin_y': 0,
-            'begin_x': 0,
-            'height': 27,
-            'width': 300
-        },
         'range_header': {
             'position': (2, 3),
             'text': 'Range',
@@ -104,26 +97,26 @@ def get_screen_layout():
             'categories': [
                 'number'
             ],
-            'text': '|',
+            'counter_text': '|',
             'modulus': 200,
             'color': 45,
             'regex': '^checking total of (?P<value>\d+) numbers$',
             'table': True
         },
         'range_header': {
-            'position': (13, 15),
+            'position': (14, 15),
             'text': 'Total:',
             'text_color': 243,
         },
         'prime_total': {
-            'position': (13, 23),
+            'position': (14, 23),
             'text': '',
             'color': 3,
             'keep_count': True,
             'regex': '^prime$',
         },
         'not_prime_total': {
-            'position': (13, 32),
+            'position': (14, 32),
             'text': '',
             'color': 2,
             'keep_count': True,
@@ -145,8 +138,9 @@ def main():
             {'range': '60001-70000'},
             {'range': '70001-80000'},
             {'range': '80001-90000'},
+            {'range': '90001-100000'},
         ],
-        number_of_processes=9,
+        number_of_processes=10,
         screen_layout=get_screen_layout())
 
 

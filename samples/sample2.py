@@ -49,13 +49,6 @@ def process_networks(data, shared_data):
 
 def get_screen_layout():
     return {
-        'default': {
-            'window': True,
-            'begin_y': 0,
-            'begin_x': 0,
-            'height': 27,
-            'width': 300
-        },
         'network': {
             'position': (1, 0),
             'text': 'Processing Network: 0',
@@ -102,7 +95,7 @@ def get_screen_layout():
                 'blacklisted',
                 'not_translated'
             ],
-            'text': '|',
+            'counter_text': '|',
             # 'modulus': 5,
             # 'color': 45,
             # 'regex': '^(?P<value>\d+) networks extracted$'

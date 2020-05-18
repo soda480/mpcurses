@@ -82,13 +82,6 @@ def update_firmware(process_data, shared_data):
 
 def get_screen_layout():
     return {
-        'default': {
-            'window': True,
-            'begin_y': 0,
-            'begin_x': 0,
-            'height': 21,
-            'width': 300
-        },
         'window_legend': {
             'window': True,
             'begin_y': 22,

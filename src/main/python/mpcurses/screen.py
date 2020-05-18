@@ -32,9 +32,23 @@ def initialize_colors():
         curses.init_pair(index + 1, index, -1)
 
 
+def create_default_window(screen_layout):
+    """ create default window
+    """
+    screen_layout['default'] = {
+        'window': True,
+        'begin_y': 0,
+        'begin_x': 0,
+        'height': 20,
+        'width': 200
+    }
+
+
 def create_windows(screen_layout):
     """ create windows objects and return dict of categories of window objects
     """
+    if 'default' not in screen_layout:
+        create_default_window(screen_layout)
     windows = {}
     for category, data in screen_layout.items():
         if data.get('window'):
@@ -51,6 +65,13 @@ def assign_windows(windows, screen_layout):
             data['_window'] = windows[window_id]
         else:
             data['_window'] = windows['default']
+
+
+def refresh_windows(windows):
+    """ refresh windows
+    """
+    for _, window in windows.items():
+        window.refresh()
 
 
 def initialize_counter(offsets, screen_layout):
@@ -72,6 +93,17 @@ def initialize_counter(offsets, screen_layout):
         screen_layout['_counter_'][offset]['_count'] = 0
         if 'modulus' in screen_layout['_counter_']:
             screen_layout['_counter_'][offset]['_modulus_count'] = 0
+
+
+def initialize_text(category_data):
+    """ initialize screen for categories containing text
+    """
+    window = category_data['_window']
+    y_pos = category_data['position'][0]
+    x_pos = category_data['position'][1]
+    text = category_data['text']
+    text_color = category_data['text_color']
+    window.addstr(y_pos, x_pos, text, curses.color_pair(text_color))
 
 
 def initialize_keep_count(category, offsets, screen_layout):
@@ -108,24 +140,20 @@ def initialize_screen(screen, screen_layout, offsets):
     logger.debug('initializing screen')
     initialize_colors()
     curses.curs_set(0)
+
     windows = create_windows(screen_layout)
     assign_windows(windows, screen_layout)
 
     for category, data in screen_layout.items():
         if category == '_counter_':
             initialize_counter(offsets, screen_layout)
-            continue
-
         if data.get('text'):
-            data['_window'].addstr(data['position'][0], data['position'][1], data['text'], curses.color_pair(data['text_color']))
-
+            initialize_text(data)
         if data.get('keep_count'):
             initialize_keep_count(category, offsets, screen_layout)
 
     screen.refresh()
-
-    for _, window in windows.items():
-        window.refresh()
+    refresh_windows(windows)
 
 
 def finalize_screen(screen, screen_layout):
@@ -139,9 +167,9 @@ def finalize_screen(screen, screen_layout):
     window.move(0, 0)
     window.clrtoeol()
 
-    for item, data in screen_layout.items():
+    for category, data in screen_layout.items():
         if data.get('clear_end'):
-            data['_window'].move(*screen_layout[item]['position'])
+            data['_window'].move(*screen_layout[category]['position'])
             data['_window'].clrtoeol()
 
     window.addstr(0, 0, '[Press q to exit]', curses.color_pair(12))
@@ -193,14 +221,26 @@ def get_position(text):
         return len(text) + 1
 
 
-def process_counter(offset, category, value, window, screen_layout):
+def process_clear(category, y_pos, x_pos, screen_layout):
+    """ process clear directive
+    """
+    if screen_layout[category].get('clear'):
+        window = screen_layout[category]['_window']
+        window.move(y_pos, x_pos)
+        window.clrtoeol()
+
+
+def process_counter(offset, category, value, screen_layout):
     """ process counter directive
     """
+    if '_counter_' not in screen_layout:
+        return
+    window = screen_layout[category]['_window']
     if category in screen_layout['_counter_']['categories']:
         position = screen_layout['_counter_']['position']
         x_pos = position[1] + screen_layout['_counter_'][offset]['_count']
         y_pos = position[0] + offset
-        counter_value = screen_layout['_counter_']['text']
+        counter_value = screen_layout['_counter_']['counter_text']
         color = screen_layout[category]['color']
         screen_layout['_counter_'][offset]['_count'] += 1
         if 'modulus' in screen_layout['_counter_']:
@@ -296,16 +336,13 @@ def update_screen(message, screen, screen_layout):
             x_pos = get_category_x_pos(category, screen_layout)
             color = get_category_color(category, sanitized_message, screen_layout)
             value = get_category_value(category, offset, category_value[1], screen_layout)
+
+            process_clear(category, y_pos, x_pos, screen_layout)
+
             window = screen_layout[category]['_window']
-
-            if screen_layout[category].get('clear'):
-                window.move(y_pos, x_pos)
-                window.clrtoeol()
-
             window.addstr(y_pos, x_pos, value, curses.color_pair(color))
 
-            if '_counter_' in screen_layout:
-                process_counter(offset, category, value, window, screen_layout)
+            process_counter(offset, category, value, screen_layout)
 
             window.refresh()
 

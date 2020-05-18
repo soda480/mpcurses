@@ -20,6 +20,7 @@ from mock import Mock
 from mock import MagicMock
 
 from mpcurses.screen import initialize_colors
+from mpcurses.screen import create_default_window
 from mpcurses.screen import create_windows
 from mpcurses.screen import assign_windows
 from mpcurses.screen import initialize_counter
@@ -65,8 +66,23 @@ class TestScreen(unittest.TestCase):
         self.assertEqual(curses_mock.init_pair.mock_calls[0], init_pair_call_1)
         self.assertEqual(curses_mock.init_pair.mock_calls[1], init_pair_call_2)
 
+    def test__create_default_window_Should_ReturnExpected_When_Called(self, *patches):
+        screen_layout = {}
+        create_default_window(screen_layout)
+        expected_result = {
+            'default': {
+                'window': True,
+                'begin_y': 0,
+                'begin_x': 0,
+                'height': 20,
+                'width': 200
+            }
+        }
+        self.assertEqual(screen_layout, expected_result)
+
+    @patch('mpcurses.screen.create_default_window')
     @patch('mpcurses.screen.curses.newwin')
-    def test__create_windows_Should_ReturnExpected_When_Called(self, newwin_patch, *patches):
+    def test__create_windows_Should_ReturnExpected_When_Called(self, newwin_patch, create_default_window_patch, *patches):
         window1_mock = Mock()
         window2_mock = Mock()
         newwin_patch.side_effect = [
@@ -99,6 +115,32 @@ class TestScreen(unittest.TestCase):
         newwin_call2 = call(3, 300, 22, 0)
         self.assertTrue(newwin_call1 in newwin_patch.mock_calls)
         self.assertTrue(newwin_call2 in newwin_patch.mock_calls)
+        create_default_window_patch.assert_not_called()
+
+    @patch('mpcurses.screen.create_default_window')
+    @patch('mpcurses.screen.curses.newwin')
+    def test__create_windows_Should_CallExpected_When_NoDefault(self, newwin_patch, create_default_window_patch, *patches):
+        window1_mock = Mock()
+        newwin_patch.side_effect = [
+            window1_mock
+        ]
+        screen_layout = {
+            'window_legend': {
+                'window': True,
+                'begin_y': 22,
+                'begin_x': 0,
+                'height': 3,
+                'width': 300
+            }
+        }
+        result = create_windows(screen_layout)
+        expected_result = {
+            'window_legend': window1_mock,
+        }
+        self.assertEqual(result, expected_result)
+        newwin_call = call(3, 300, 22, 0)
+        self.assertTrue(newwin_call in newwin_patch.mock_calls)
+        create_default_window_patch.assert_called_once_with(screen_layout)
 
     def test__assign_windows_Should_UpdateScrenLayout_When_Called(self, *patches):
         window1_mock = Mock()
@@ -244,7 +286,8 @@ class TestScreen(unittest.TestCase):
                     'blacklisted',
                     'not_translated'
                 ],
-                'text': '|',
+                'counter_text': '|',
+                '_window': default_window_mock,
             }
         }
         initialize_screen(screen_mock, screen_layout, 1)
@@ -372,13 +415,14 @@ class TestScreen(unittest.TestCase):
         screen_layout = {
             'translated': {
                 'color': 31,
+                '_window': window_mock
             },
             '_counter_': {
                 'position': (6, 0),
                 'categories': [
                     'translated',
                 ],
-                'text': '|',
+                'counter_text': '|',
                 'modulus': 5,
                 'color': 21,
                 'regex': '^(?P<value>\\d+) networks extracted$',
@@ -388,7 +432,7 @@ class TestScreen(unittest.TestCase):
                 },
             }
         }
-        process_counter(1, 'translated', 10, window_mock, screen_layout)
+        process_counter(1, 'translated', 10, screen_layout)
         window_mock.addstr.assert_called_once_with(7, 4, '|', color_pair_patch.return_value)
         color_pair_patch.assert_called_once_with(21)
 
@@ -398,19 +442,20 @@ class TestScreen(unittest.TestCase):
         screen_layout = {
             'translated': {
                 'color': 31,
+                '_window': window_mock
             },
             '_counter_': {
                 'position': (6, 0),
                 'categories': [
                     'translated',
                 ],
-                'text': '|',
+                'counter_text': '|',
                 1: {
                     '_count': 44,
                 },
             }
         }
-        process_counter(1, 'translated', 10, window_mock, screen_layout)
+        process_counter(1, 'translated', 10, screen_layout)
         window_mock.addstr.assert_called_once_with(7, 44, '|', color_pair_patch.return_value)
         color_pair_patch.assert_called_once_with(31)
 
@@ -423,7 +468,7 @@ class TestScreen(unittest.TestCase):
                 'categories': [
                     'translated',
                 ],
-                'text': '|',
+                'counter_text': '|',
                 'modulus': 5,
                 'color': 45,
                 'regex': '^(?P<value>\\d+) networks extracted$',
@@ -431,9 +476,10 @@ class TestScreen(unittest.TestCase):
                     '_count': 0,
                     '_modulus_count': 0
                 },
+                '_window': window_mock
             }
         }
-        process_counter(1, '_counter_', 100, window_mock, screen_layout)
+        process_counter(1, '_counter_', 100, screen_layout)
         spaces = ' ' * 20  # 100/5
         window_mock.addstr.assert_called_once_with(7, 0, '[{}]'.format(spaces), color_pair_patch.return_value)
         color_pair_patch.assert_called_once_with(45)
@@ -691,7 +737,7 @@ class TestScreen(unittest.TestCase):
         update_screen(message, screen_mock, screen_layout)
         window_mock.addstr.assert_called_with(6, 21, '33', color_pair_patch.return_value)
         color_pair_patch.assert_called_once_with(241)
-        process_counter_patch.assert_called_once_with(3, 'translated', '33', window_mock, screen_layout)
+        process_counter_patch.assert_called_once_with(3, 'translated', '33', screen_layout)
 
     @patch('mpcurses.screen.process_counter')
     @patch('mpcurses.screen.curses.color_pair')
@@ -720,7 +766,7 @@ class TestScreen(unittest.TestCase):
         update_screen(message, screen_mock, screen_layout)
         window_mock.addstr.assert_called_with(3, 21, '33', color_pair_patch.return_value)
         color_pair_patch.assert_called_once_with(241)
-        process_counter_patch.assert_called_once_with(3, 'translated', '33', window_mock, screen_layout)
+        process_counter_patch.assert_called_once_with(3, 'translated', '33', screen_layout)
 
     @patch('mpcurses.screen.time')
     def test__blink_running_Should_Return_When_NoScreen(self, time_patch, *patches):

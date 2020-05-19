@@ -16,7 +16,18 @@
 """
 mpcurses is a framework that exposes a simple set of APIs enabling multi-process integration with the curses screen painting library.
 
-With the mpcurses APIs, the complexities of setting up multi-processing within a curses environment are abstracted away. The only requirement is that the target method needs to implement logging.
+With mpcurses, the complexities of setting up multi-processing within a curses environment are abstracted into a few simple APIs and constructs. The main features:
+
+* Execute a method across one or more concurrent processes
+* Queue method execution to ensure only a predefined number of processes are running
+* Define `curses` screen layout using a Python dict
+* Leverage built-in directives for updating screen dynamically
+  * Keep numeric counts
+  * Update text values
+  * Update text colors
+  * Maintain visual indicators
+  * Update progress bars
+  * Display table of data coming from concurrent proceses
 
 **How it works**
 
@@ -46,7 +57,7 @@ authors = [
 ]
 summary = 'A framework that exposes a simple set of APIs enabling multi-process integration with the curses screen painting library'
 url = 'https://github.com/soda480/mpcurses'
-version = '0.0.5'
+version = '0.0.6'
 default_task = [
     'clean',
     'analyze',

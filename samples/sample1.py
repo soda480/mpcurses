@@ -40,7 +40,7 @@ def get_screen_map():
             'position': (1, 0),
             'text': 'Current Number: -',
             'text_color': 244,
-            'color': 0,
+            'color': 236,
             'clear': True,
             'regex': '^checking (?P<value>\d+)$'
         },
@@ -48,18 +48,20 @@ def get_screen_map():
             'position': (2, 0),
             'text': 'Primes: 0',
             'text_color': 244,
-            'color': 3,
+            'color': 235,
             'keep_count': True,
+            'zfill': 4,
             'regex': '^prime$'
         },
         'not_prime': {
             'position': (3, 0),
             'text': 'Not Primes: 0',
             'text_color': 244,
-            'color': 2,
+            'color': 234,
             'keep_count': True,
+            'zfill': 4,
             'regex': '^not prime$'
-        }
+        },
     }
 
 

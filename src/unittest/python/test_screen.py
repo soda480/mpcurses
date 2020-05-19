@@ -61,8 +61,8 @@ class TestScreen(unittest.TestCase):
         curses_mock.start_color.asset_called_with()
         curses_mock.use_default_colors.assert_called_with()
 
-        init_pair_call_1 = call(1, 0, -1)
-        init_pair_call_2 = call(2, 1, -1)
+        init_pair_call_1 = call(0, 0, -1)
+        init_pair_call_2 = call(1, 1, -1)
         self.assertEqual(curses_mock.init_pair.mock_calls[0], init_pair_call_1)
         self.assertEqual(curses_mock.init_pair.mock_calls[1], init_pair_call_2)
 
@@ -521,22 +521,23 @@ class TestScreen(unittest.TestCase):
             'translated': {
                 'table': True,
                 3: {
-                    '_count': 32
+                    '_count': 3201
                 }
             }
         }
         result = get_category_count('translated', 3, screen_layout)
-        expected_result = '33'
+        expected_result = '3202'
         self.assertEqual(result, expected_result)
 
-    def test__get_category_count_Should_ReturnExpected_When_NoTable(self, *patches):
+    def test__get_category_count_Should_ReturnExpected_When_NoTableAndZfill(self, *patches):
         screen_layout = {
             'translated': {
-                '_count': 21
+                '_count': 21,
+                'zfill': 5
             }
         }
         result = get_category_count('translated', 3, screen_layout)
-        expected_result = '22'
+        expected_result = '00022'
         self.assertEqual(result, expected_result)
 
     @patch('mpcurses.screen.get_category_count')
@@ -735,9 +736,9 @@ class TestScreen(unittest.TestCase):
         message = '#3-network powerdac1234 was translated'
         screen_mock = Mock()
         update_screen(message, screen_mock, screen_layout)
-        window_mock.addstr.assert_called_with(6, 21, '33', color_pair_patch.return_value)
+        window_mock.addstr.assert_called_with(6, 21, '033', color_pair_patch.return_value)
         color_pair_patch.assert_called_once_with(241)
-        process_counter_patch.assert_called_once_with(3, 'translated', '33', screen_layout)
+        process_counter_patch.assert_called_once_with(3, 'translated', '033', screen_layout)
 
     @patch('mpcurses.screen.process_counter')
     @patch('mpcurses.screen.curses.color_pair')
@@ -764,9 +765,9 @@ class TestScreen(unittest.TestCase):
         message = '#3-network powerdac1234 was translated'
         screen_mock = Mock()
         update_screen(message, screen_mock, screen_layout)
-        window_mock.addstr.assert_called_with(3, 21, '33', color_pair_patch.return_value)
+        window_mock.addstr.assert_called_with(3, 21, '033', color_pair_patch.return_value)
         color_pair_patch.assert_called_once_with(241)
-        process_counter_patch.assert_called_once_with(3, 'translated', '33', screen_layout)
+        process_counter_patch.assert_called_once_with(3, 'translated', '033', screen_layout)
 
     @patch('mpcurses.screen.time')
     def test__blink_running_Should_Return_When_NoScreen(self, time_patch, *patches):

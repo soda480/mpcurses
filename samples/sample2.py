@@ -53,7 +53,7 @@ def get_screen_layout():
             'position': (1, 0),
             'text': 'Processing Network: 0',
             'text_color': 244,
-            'color': 0,
+            'color': 236,
             'clear': True,
             'regex': '^processing network "(?P<value>.*)"$'
         },
@@ -68,7 +68,7 @@ def get_screen_layout():
             'position': (3, 0),
             'text': 'Networks Translated: 0',
             'text_color': 244,
-            'color': 3,
+            'color': 2,
             'keep_count': True,
             'regex': '^network ".*" was translated$'
         },
@@ -76,7 +76,7 @@ def get_screen_layout():
             'position': (4, 0),
             'text': 'Networks BlackListed: 0',
             'text_color': 244,
-            'color': 4,
+            'color': 232,
             'keep_count': True,
             'regex': '^network ".*" is blacklisted$'
         },
@@ -84,7 +84,7 @@ def get_screen_layout():
             'position': (5, 0),
             'text': 'Networks Not Translated: 0',
             'text_color': 244,
-            'color': 2,
+            'color': 237,
             'keep_count': True,
             'regex': '^network ".*" was not translated$'
         },
@@ -97,7 +97,7 @@ def get_screen_layout():
             ],
             'counter_text': '|',
             # 'modulus': 5,
-            # 'color': 45,
+            # 'color': 44,
             # 'regex': '^(?P<value>\d+) networks extracted$'
         }
     }

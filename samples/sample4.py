@@ -27,8 +27,6 @@ def check_primes(data, shared_data):
     logger.debug('checking total of {} numbers'.format(upper - lower))
     for number in range(lower, upper):
         logger.debug('checking {}'.format(number))
-        # sleep here only to assist in the visualization of screen
-        # sleep(.001)
         if is_prime(number):
             logger.debug('prime')
         else:
@@ -72,24 +70,26 @@ def get_screen_layout():
         'number': {
             'position': (3, 14),
             'text': '',
-            'color': 0,
+            'color': 63,
             'regex': '^checking (?P<value>\d+)$',
             'table': True
         },
         'prime': {
             'position': (3, 23),
             'text': '',
-            'color': 3,
+            'color': 40,
             'keep_count': True,
+            'zfill': 4,
             'regex': '^prime$',
             'table': True
         },
         'not_prime': {
             'position': (3, 32),
             'text': '',
-            'color': 2,
+            'color': 11,
             'keep_count': True,
             'regex': '^not prime$',
+            'zfill': 4,
             'table': True
         },
         '_counter_': {
@@ -99,11 +99,11 @@ def get_screen_layout():
             ],
             'counter_text': '|',
             'modulus': 200,
-            'color': 45,
+            'color': 44,
             'regex': '^checking total of (?P<value>\d+) numbers$',
             'table': True
         },
-        'range_header': {
+        'total_header': {
             'position': (14, 15),
             'text': 'Total:',
             'text_color': 243,
@@ -111,15 +111,17 @@ def get_screen_layout():
         'prime_total': {
             'position': (14, 23),
             'text': '',
-            'color': 3,
+            'color': 40,
             'keep_count': True,
+            'zfill': 4,
             'regex': '^prime$',
         },
         'not_prime_total': {
             'position': (14, 32),
             'text': '',
-            'color': 2,
+            'color': 11,
             'keep_count': True,
+            'zfill': 5,
             'regex': '^not prime$',
         },
     }

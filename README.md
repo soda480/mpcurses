@@ -2,7 +2,19 @@
 # mpcurses #
 mpcurses is a framework that exposes a simple set of APIs enabling multi-process integration with the curses screen painting library.
 
-With the mpcurses APIs, the complexities of setting up multi-processing within a curses environment are abstracted away. The only requirement is that the target method needs to implement logging. 
+With mpcurses, the complexities of setting up multi-processing within a curses environment are abstracted into a few simple APIs and constructs. The main features:
+
+* Execute a method across one or more concurrent processes
+* Queue method execution to ensure only a predefined number of processes are running
+* Define `curses` screen layout using a Python dict
+* Leverage built-in directives for updating screen dynamically
+  * Keep numeric counts
+  * Update text values
+  * Update text colors
+  * Maintain visual indicators
+  * Update progress bars
+  * Display table of data coming from concurrent proceses
+
 
 ### Installation ###
 ```bash
@@ -27,6 +39,7 @@ The result is a screen that is being updated dynamically from one or more concur
 | samples/sample2.py | network name translator/ single process, screen update, count, indicator  |
 | samples/sample3.py | firmware update simulator / multi-process, screen table update, count, indicator, process status |
 | samples/sample4.py | prime number counter / multi-process, screen update, count, progress bar |
+| samples/colors.py  | displays available colors - most common ones |
 
 
 #### Running the samples ####

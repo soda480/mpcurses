@@ -29,7 +29,15 @@ def initialize_colors():
     curses.start_color()
     curses.use_default_colors()
     for index in range(0, curses.COLORS):
-        curses.init_pair(index + 1, index, -1)
+        curses.init_pair(index, index, -1)
+    curses.init_pair(232, 16, 226)  # black/yellow
+    curses.init_pair(233, 15, 136)  # white/brown
+    curses.init_pair(234, 16, 51)  # black/cyan
+    curses.init_pair(235, 15, 19)  # white/blue
+    curses.init_pair(236, 15, 240)  # white/grey
+    curses.init_pair(237, 15, 160)  # white/red
+    curses.init_pair(238, 16, 15)  # black/white
+    curses.init_pair(239, 15, 23)  # white/green
 
 
 def create_default_window(screen_layout):
@@ -172,7 +180,7 @@ def finalize_screen(screen, screen_layout):
             data['_window'].move(*screen_layout[category]['position'])
             data['_window'].clrtoeol()
 
-    window.addstr(0, 0, '[Press q to exit]', curses.color_pair(12))
+    window.addstr(0, 0, '[Press q to exit]', curses.color_pair(11))
 
     window.refresh()
     while True:
@@ -279,12 +287,13 @@ def get_category_color(category, message, screen_layout):
 def get_category_count(category, offset, screen_layout):
     """ return count for category in screen layout
     """
+    zfill = screen_layout[category].get('zfill', 3)
     if screen_layout[category].get('table'):
         screen_layout[category][offset]['_count'] += 1
-        return str(screen_layout[category][offset]['_count'])
+        return str(screen_layout[category][offset]['_count']).zfill(zfill)
     else:
         screen_layout[category]['_count'] += 1
-        return str(screen_layout[category]['_count'])
+        return str(screen_layout[category]['_count']).zfill(zfill)
 
 
 def get_category_value(category, offset, initial_value, screen_layout):
@@ -364,20 +373,20 @@ def blink_running(screen, blink_meta):
         blink_meta['blink_on_time'] = time()
         blink_meta['blink_off_time'] = time()
         blink_meta['blink_on'] = True
-        screen.addstr(0, 0, ' RUNNING ', curses.color_pair(12))
+        screen.addstr(0, 0, ' RUNNING ', curses.color_pair(11))
         return
 
     current_time = time()
     if blink_meta['blink_on']:
         _, seconds = divmod((current_time - blink_meta['blink_on_time']), 60)
         if seconds > .7:
-            screen.addstr(0, 0, ' RUNNING ', curses.color_pair(1))
+            screen.addstr(0, 0, ' RUNNING ', curses.color_pair(16))
             blink_meta['blink_on'] = False
             blink_meta['blink_off_time'] = current_time
     else:
         _, seconds = divmod((current_time - blink_meta['blink_off_time']), 60)
         if seconds > .7:
-            screen.addstr(0, 0, ' RUNNING ', curses.color_pair(12))
+            screen.addstr(0, 0, ' RUNNING ', curses.color_pair(11))
             blink_meta['blink_on'] = True
             blink_meta['blink_on_time'] = current_time
 

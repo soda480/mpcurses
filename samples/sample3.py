@@ -99,7 +99,7 @@ def get_screen_layout():
             'position': (1, 1),
             'text': 'Active: 0',
             'text_color': 245,
-            'color': 7,
+            'color': 6,
             'regex': '^mpcurses: number of active processes (?P<value>\d+)$',
             'window_id': 'window_legend'
         },
@@ -107,7 +107,7 @@ def get_screen_layout():
             'position': (1, 20),
             'text': 'Queued: 0',
             'text_color': 245,
-            'color': 7,
+            'color': 6,
             'regex': '^mpcurses: number of queued processes (?P<value>\d+)$',
             'window_id': 'window_legend'
         },
@@ -115,7 +115,7 @@ def get_screen_layout():
             'position': (1, 39),
             'text': 'Completed: 0',
             'text_color': 245,
-            'color': 7,
+            'color': 6,
             'count': 0,
             'keep_count': True,
             'regex': '^mpcurses: a process has completed$',
@@ -150,7 +150,7 @@ def get_screen_layout():
             'position': (3, 0),
             'text': '',
             'replace_text': '->',
-            'color': 15,
+            'color': 14,
             'regex': '^executing .* firmware update on server at bay .*$',
             'table': True
         },
@@ -183,7 +183,7 @@ def get_screen_layout():
             'effects': [
                 {
                     'regex': '.*2.64.*$',
-                    'color': 3
+                    'color': 2
                 }
             ],
             'table': True
@@ -191,7 +191,7 @@ def get_screen_layout():
         'warning': {
             'position': (3, 41),
             'text': '',
-            'color': 4,
+            'color': 196,
             'keep_count': True,
             'regex': '^WARN:.*$',
             'table': True
@@ -199,19 +199,19 @@ def get_screen_layout():
         'message': {
             'position': (3, 48),
             'text': '',
-            'color': 0,
+            'color': 243,
             'clear': True,
             'regex': '^(?!mpcurses:.*)(?!processing next bay)(?!DONE)(?!INFO:.*)(?P<value>.*)$',
             'effects': [
                 {
                     'regex': '.*firmware update on server at bay .* was successful$',
-                    'color': 3
+                    'color': 2
                 }, {
                     'regex': '.* failed.*',
-                    'color': 2
+                    'color': 65
                 }, {
                     'regex': '^ERROR.*$',
-                    'color': 2
+                    'color': 65
                 }
             ],
             'table': True

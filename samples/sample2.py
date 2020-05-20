@@ -21,7 +21,7 @@ def get_hex():
 def get_networks():
     networks = []
     for count in range(0, 150):
-        networks.append(get_hex()[0:12])
+        networks.append(get_hex()[0:16])
     return networks
 
 
@@ -46,56 +46,65 @@ def process_networks(data, shared_data):
             sleep(random.choice([0.1, 0.2]))
             logger.debug('network "{}" was translated'.format(network))
 
+    logger.debug('network processing complete')
+
 
 def get_screen_layout():
     return {
         'network': {
             'position': (1, 0),
-            'text': 'Processing Network: 0',
-            'text_color': 244,
+            'text': 'Processing Network: -',
+            'text_color': 245,
             'color': 236,
             'clear': True,
             'regex': '^processing network "(?P<value>.*)"$'
         },
-        'extracted': {
-            'position': (2, 0),
-            'text': 'Networks To Process: 0',
-            'text_color': 244,
-            'color': 0,
+        # 'clear_network': {
+        #     'position': (1, 20),
+        #     'replace_text': ' ',
+        #     'clear': True,
+        #     'regex': '^network processing complete$',
+        # },
+        'to_process': {
+            'position': (2, 8),
+            'text': 'To Process: 0',
+            'text_color': 245,
+            'color': 15,
             'regex': '^(?P<value>\d+) networks extracted$'
         },
         'translated': {
-            'position': (3, 0),
-            'text': 'Networks Translated: 0',
-            'text_color': 244,
+            'position': (3, 8),
+            'text': 'Translated: 0',
+            'text_color': 245,
             'color': 2,
             'keep_count': True,
             'regex': '^network ".*" was translated$'
         },
         'blacklisted': {
-            'position': (4, 0),
-            'text': 'Networks BlackListed: 0',
-            'text_color': 244,
+            'position': (4, 7),
+            'text': 'BlackListed: 0',
+            'text_color': 245,
             'color': 232,
             'keep_count': True,
             'regex': '^network ".*" is blacklisted$'
         },
         'not_translated': {
-            'position': (5, 0),
-            'text': 'Networks Not Translated: 0',
-            'text_color': 244,
+            'position': (5, 4),
+            'text': 'Not Translated: 0',
+            'text_color': 245,
             'color': 237,
             'keep_count': True,
             'regex': '^network ".*" was not translated$'
         },
         '_counter_': {
-            'position': (6, 0),
+            'position': (7, 0),
             'categories': [
                 'translated',
                 'blacklisted',
                 'not_translated'
             ],
             'counter_text': '|',
+            'width': 50,
             # 'modulus': 5,
             # 'color': 44,
             # 'regex': '^(?P<value>\d+) networks extracted$'

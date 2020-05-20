@@ -24,9 +24,9 @@ def check_primes(data, shared_data):
     range_split = data['range'].split('-')
     lower = int(range_split[0])
     upper = int(range_split[1]) + 1
-    logger.debug('checking total of {} numbers'.format(upper - lower))
+    logger.debug('total of {} numbers'.format(upper - lower))
     for number in range(lower, upper):
-        logger.debug('checking {}'.format(number))
+        logger.debug('checking {}/{}'.format(str(number).zfill(6), str(range_split[1]).zfill(6)))
         if is_prime(number):
             logger.debug('prime')
         else:
@@ -35,91 +35,86 @@ def check_primes(data, shared_data):
 
 def get_screen_layout():
     return {
-        'range_header': {
-            'position': (2, 3),
-            'text': 'Range',
-            'text_color': 243,
-        },
         'number_header': {
-            'position': (2, 14),
+            'position': (2, 4),
             'text': 'Number',
-            'text_color': 243,
+            'text_color': 15,
         },
         'prime_header': {
-            'position': (2, 23),
-            'text': 'Primes',
-            'text_color': 243,
+            'position': (2, 15),
+            'text': 'Prime :',
+            'text_color': 15,
         },
-        'notprime_header': {
-            'position': (2, 32),
-            'text': 'NotPrimes',
-            'text_color': 243,
+        'not_prime_header1': {
+            'position': (1, 22),
+            'text': 'Not',
+            'text_color': 15,
         },
-        'progress_header': {
-            'position': (2, 44),
-            'text': 'Progress',
-            'text_color': 243,
-        },
-        'range': {
-            'position': (3, 0),
-            'text': '',
-            'color': 0,
-            'regex': "^'range' is '(?P<value>.*)'$",
-            'table': True
+        'not_prime_header2': {
+            'position': (2, 21),
+            'text': 'Prime',
+            'text_color': 15,
         },
         'number': {
-            'position': (3, 14),
+            'position': (3, 1),
             'text': '',
-            'color': 63,
-            'regex': '^checking (?P<value>\d+)$',
+            'color': 27,
+            'regex': '^checking (?P<value>\d+)/\d+$',
+            'table': True
+        },
+        'uppper_number': {
+            'position': (3, 7),
+            'text': '',
+            'color': 242,
+            'regex': '^checking \d+(?P<value>/\d+)$',
             'table': True
         },
         'prime': {
-            'position': (3, 23),
+            'position': (3, 15),
             'text': '',
-            'color': 40,
+            'color': 2,
             'keep_count': True,
-            'zfill': 4,
+            'zfill': 5,
             'regex': '^prime$',
             'table': True
         },
         'not_prime': {
-            'position': (3, 32),
+            'position': (3, 21),
             'text': '',
-            'color': 11,
+            'color': 3,
             'keep_count': True,
             'regex': '^not prime$',
-            'zfill': 4,
+            'zfill': 5,
             'table': True
         },
         '_counter_': {
-            'position': (3, 44),
+            'position': (3, 27),
             'categories': [
                 'number'
             ],
             'counter_text': '|',
             'modulus': 200,
-            'color': 44,
-            'regex': '^checking total of (?P<value>\d+) numbers$',
+            'color': 242,
+            # 'regex': '^total of (?P<value>\d+) numbers$',
             'table': True
         },
         'total_header': {
-            'position': (14, 15),
+            'position': (14, 8),
             'text': 'Total:',
-            'text_color': 243,
+            'text_color': 236,
         },
         'prime_total': {
-            'position': (14, 23),
+            'position': (14, 15),
             'text': '',
-            'color': 40,
+            'color': 2,
             'keep_count': True,
-            'zfill': 4,
+            'zfill': 5,
             'regex': '^prime$',
         },
         'not_prime_total': {
-            'position': (14, 32),
+            'position': (14, 21),
             'text': '',
-            'color': 11,
+            'color': 3,
             'keep_count': True,
             'zfill': 5,
             'regex': '^not prime$',

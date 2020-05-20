@@ -27,6 +27,10 @@ from mpcurses.process import execute
 
 from queue import Empty
 
+import sys
+import logging
+logger = logging.getLogger(__name__)
+
 
 class TestProcess(unittest.TestCase):
 

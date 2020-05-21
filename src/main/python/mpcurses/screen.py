@@ -261,6 +261,13 @@ def process_counter(offset, category, value, screen_layout):
                 window.addstr(y_pos, x_pos, counter_value, curses.color_pair(color))
         else:
             # increments the counter
+            if screen_layout['_counter_'].get('width'):
+                # width and modulus are mutually exclusive
+                width = screen_layout['_counter_']['width']
+                count = screen_layout['_counter_'][offset]['_count']
+                if count % width == 0:
+                    screen_layout['_counter_']['position'] = (position[0] + 1, position[1])
+                    screen_layout['_counter_'][offset]['_count'] = 0
             window.addstr(y_pos, x_pos, counter_value, curses.color_pair(color))
     elif category == '_counter_':
         # regex infers progress bar

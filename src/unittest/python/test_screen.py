@@ -41,6 +41,10 @@ from mpcurses.screen import get_category_value
 from mpcurses.screen import get_category_x_pos
 from mpcurses.screen import get_category_y_pos
 
+import sys
+import logging
+logger = logging.getLogger(__name__)
+
 
 class TestScreen(unittest.TestCase):
 
@@ -483,6 +487,31 @@ class TestScreen(unittest.TestCase):
         spaces = ' ' * 20  # 100/5
         window_mock.addstr.assert_called_once_with(7, 0, '[{}]'.format(spaces), color_pair_patch.return_value)
         color_pair_patch.assert_called_once_with(45)
+
+    @patch('mpcurses.screen.curses.color_pair')
+    def test__process_counter_Should_CallExpected_When_Width(self, color_pair_patch, *patches):
+        window_mock = Mock()
+        screen_layout = {
+            'translated': {
+                'color': 31,
+                '_window': window_mock
+            },
+            '_counter_': {
+                'position': (6, 10),
+                'categories': [
+                    'translated',
+                ],
+                'counter_text': '|',
+                'width': 5,
+                0: {
+                    '_count': 44,
+                },
+            }
+        }
+        process_counter(0, 'translated', 10, screen_layout)
+        window_mock.addstr.assert_called_once_with(6, 54, '|', color_pair_patch.return_value)
+        color_pair_patch.assert_called_once_with(31)
+        self.assertEqual(screen_layout['_counter_']['position'], (7, 10))
 
     def test__get_category_color_Should_ReturnExpected_When_EffectMatch(self, *patches):
         screen_layout = {

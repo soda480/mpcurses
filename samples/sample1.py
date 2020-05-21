@@ -37,18 +37,18 @@ def check_primes(data, shared_data):
 def get_screen_map():
     return {
         'number': {
-            'position': (1, 0),
-            'text': 'Current Number: -',
+            'position': (1, 4),
+            'text': 'Number: -',
             'text_color': 244,
-            'color': 236,
+            'color': 27,
             'clear': True,
             'regex': '^checking (?P<value>\d+)$'
         },
         'prime': {
-            'position': (2, 0),
+            'position': (2, 4),
             'text': 'Primes: 0',
             'text_color': 244,
-            'color': 235,
+            'color': 2,
             'keep_count': True,
             'zfill': 4,
             'regex': '^prime$'
@@ -57,7 +57,7 @@ def get_screen_map():
             'position': (3, 0),
             'text': 'Not Primes: 0',
             'text_color': 244,
-            'color': 234,
+            'color': 3,
             'keep_count': True,
             'zfill': 4,
             'regex': '^not prime$'

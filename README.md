@@ -36,8 +36,8 @@ The result is a screen that is being updated dynamically from one or more concur
 | Sample             | Description/Features       |
 |--------------------|----------------------------|
 | samples/sample1.py | prime number counter / single process, screen update, count |
-| samples/sample2.py | network name translator/ single process, screen update, count, indicator  |
-| samples/sample3.py | firmware update simulator / multi-process, screen table update, count, indicator, process status |
+| samples/sample2.py | network name translator/ single process, screen update, count, visual indicator  |
+| samples/sample3.py | firmware update simulator / multi-process, screen table update, count, visual indicator, process status |
 | samples/sample4.py | prime number counter / multi-process, screen update, count, progress bar |
 | samples/colors.py  | displays available colors - most common ones |
 

@@ -21,17 +21,20 @@ def is_prime(num):
 
 @queue_handler
 def check_primes(data, shared_data):
+    primes = []
     range_split = data['range'].split('-')
     lower = int(range_split[0])
     upper = int(range_split[1]) + 1
     for number in range(lower, upper):
         logger.debug('checking {}'.format(number))
         # sleep here only to assist in the visualization of screen
-        sleep(.001)
+        sleep(.0001)
         if is_prime(number):
             logger.debug('prime')
+            primes.append(number)
         else:
             logger.debug('not prime')
+    return len(primes)
 
 
 def get_screen_map():

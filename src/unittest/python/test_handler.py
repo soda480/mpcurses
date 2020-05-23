@@ -50,7 +50,6 @@ class TestHandler(unittest.TestCase):
     @patch('mpcurses.handler.logging.getLogger')
     @patch('mpcurses.handler.QueueHandler')
     def test__queue_handler_Should_AddAndRemoveQueueHandler_When_DecoratedFunctionIsPassedMessageQueue(self, queue_handler_class, get_logger_mock, *patches):
-
         root_logger_mock = Mock()
         get_logger_mock.return_value = root_logger_mock
 
@@ -68,6 +67,32 @@ class TestHandler(unittest.TestCase):
         root_logger_mock.setLevel.assert_called_with(logging.DEBUG)
         root_logger_mock.removeHandler.assert_called_with(queue_handler_object)
 
+    def test__queue_handler_Should_AddResultToResultQueue_When_DecoratedFunctionIsPassedResultQueue(self, *patches):
+        function_mock = Mock()
+        function_mock.return_value = 'function return value'
+        result_queue_mock = Mock()
+        result = queue_handler(function_mock)(offset=3, result_queue=result_queue_mock)
+        self.assertEqual(result, function_mock.return_value)
+        result_queue_mock.put.assert_called_once_with({3: function_mock.return_value})
+
+    def test__queue_handler_Should_AddDoneToMessageQueue_When_DecoratedFunctionIsPassedMessageQueueAndCompletes(self, *patches):
+        function_mock = Mock()
+        function_mock.return_value = 'function return value'
+        message_queue_mock = Mock()
+        result = queue_handler(function_mock)(offset=3, message_queue=message_queue_mock)
+        self.assertEqual(result, function_mock.return_value)
+        message_queue_mock.put.assert_called_once_with('#3-DONE')
+
+    def test__queue_handler_Should_AddErrorMessagesToMessageQueue_When_FunctionThrowsException(self, *patches):
+        function_mock = Mock()
+        function_mock.side_effect = Exception('function exception')
+        message_queue_mock = Mock()
+        queue_handler(function_mock)(offset=3, message_queue=message_queue_mock)
+        call1 = call('#3-ERROR: function exception')
+        call2 = call('#3-ERROR')
+        call3 = call('#3-DONE')
+        self.assertEqual(message_queue_mock.put.mock_calls, [call1, call2, call3])
+
     @patch('mpcurses.handler.Handler')
     def test__QueueHandler_Should_PutInfoMessageToMessageQueue_When_EmitInfoRecord(self, *patches):
         message_queue_mock = Mock()
@@ -78,6 +103,17 @@ class TestHandler(unittest.TestCase):
 
         queue_handler_object.emit(record_mock)
         message_queue_mock.put.assert_called_with('#1-INFO: some message')
+
+    @patch('mpcurses.handler.Handler')
+    def test__QueueHandler_Should_PutInfoMessageToMessageQueue_When_EmitWarnRecord(self, *patches):
+        message_queue_mock = Mock()
+        process_number = 1
+        queue_handler_object = QueueHandler(message_queue_mock, process_number)
+
+        record_mock = Mock(msg='some message', levelno=30)
+
+        queue_handler_object.emit(record_mock)
+        message_queue_mock.put.assert_called_with('#1-WARN: some message')
 
     @patch('mpcurses.handler.Handler')
     def test__QueueHandler_Should_PutErrorMessageToMessageQueue_When_EmitErrorRecord(self, *patches):

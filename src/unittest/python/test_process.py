@@ -23,6 +23,8 @@ from mpcurses.process import setup_process_queue
 from mpcurses.process import start_process
 from mpcurses.process import start_processes
 from mpcurses.process import _execute
+from mpcurses.process import terminate_processes
+from mpcurses.process import update_result
 from mpcurses.process import execute
 
 from queue import Empty
@@ -73,6 +75,7 @@ class TestProcess(unittest.TestCase):
             '#1-DONE',
         ]
         start_processes_patch.return_value = message_queue_mock
+        result_queue_mock = Mock()
 
         screen_mock = Mock()
         function_mock = Mock()
@@ -83,7 +86,7 @@ class TestProcess(unittest.TestCase):
         processes = {}
         messages = []
 
-        _execute(screen_mock, function_mock, process_data, shared_data, num_processes, messages, screen_layout, processes)
+        _execute(screen_mock, function_mock, process_data, shared_data, num_processes, messages, screen_layout, processes, result_queue_mock)
 
         screen_mock.refresh.assert_called_once_with()
         self.assertEqual(len(update_screen_patch.mock_calls), 3)
@@ -122,12 +125,13 @@ class TestProcess(unittest.TestCase):
         num_processes = 1
         screen_layout = {}
         active_processes = {}
-        messages = []
+        messages = ['message1', 'message2']
+        result_queue_mock = Mock()
 
-        _execute(screen_mock, function_mock, process_data, shared_data, num_processes, messages, screen_layout, active_processes)
+        _execute(screen_mock, function_mock, process_data, shared_data, num_processes, messages, screen_layout, active_processes, result_queue_mock)
 
         start_process_patch.assert_called()
-        start_process_patch.assert_called_once_with(function_mock, shared_data, message_queue_mock, process_queue_mock.get.return_value, active_processes)
+        start_process_patch.assert_called_once_with(function_mock, shared_data, message_queue_mock, process_queue_mock.get.return_value, active_processes, result_queue_mock)
 
     @patch('mpcurses.process.finalize_screen')
     @patch('mpcurses.process.update_screen')
@@ -154,6 +158,7 @@ class TestProcess(unittest.TestCase):
             '#1-DONE'
         ]
         start_processes_patch.return_value = message_queue_mock
+        result_queue_mock = Mock()
 
         screen_mock = Mock()
         function_mock = Mock()
@@ -164,19 +169,50 @@ class TestProcess(unittest.TestCase):
         processes = {}
         messages = []
 
-        _execute(screen_mock, function_mock, process_data, shared_data, num_processes, messages, screen_layout, processes)
+        _execute(screen_mock, function_mock, process_data, shared_data, num_processes, messages, screen_layout, processes, result_queue_mock)
 
         self.assertEqual(len(process_queue_mock.get.mock_calls), 2)
 
+    @patch('mpcurses.process.terminate_processes')
+    @patch('mpcurses.process.sys')
     @patch('mpcurses.process.wrapper')
-    def test__execute_Should_Exit_When_KeyboardInterruptIsCaught(self, wrapper_patch, *patches):
+    def test__execute_Should_CallExpected_When_KeyboardInterruptIsCaught(self, wrapper_patch, sys_patch, terminate_processes_patch, *patches):
         wrapper_patch.side_effect = [
             KeyboardInterrupt('keyboard interrupt')
         ]
         function_mock = Mock()
         screen_layout = Mock()
-        with self.assertRaises(SystemExit):
-            execute(function=function_mock, number_of_processes=1, screen_layout=screen_layout)
+        execute(function=function_mock, number_of_processes=1, screen_layout=screen_layout)
+        terminate_processes_patch.assert_called_once_with({})
+        sys_patch.exit.assert_called_once_with(-1)
+
+    def test__terminate_processes_Should_CallExpected_When_Called(self, *patches):
+        process_mock1 = Mock()
+        process_mock2 = Mock()
+        active_processes = {
+            '3': process_mock1,
+            '8': process_mock2,
+        }
+        terminate_processes(active_processes)
+        process_mock1.terminate.assert_called_once_with()
+        process_mock2.terminate.assert_called_once_with()
+
+    @patch('mpcurses.process.update_result')
+    @patch('mpcurses.process.Queue')
+    @patch('mpcurses.process._execute')
+    def test__execute_Should_CallExpected_When_NoScreenLayout(self, execute_patch, queue_patch, *patches):
+        function_mock = Mock()
+        execute(function=function_mock, number_of_processes=3)
+        execute_patch.assert_called_once_with(
+            None,
+            function_mock,
+            [(0, {})],
+            {},
+            3,
+            [],
+            None,
+            {},
+            queue_patch.return_value)
 
     @patch('mpcurses.process.Process')
     def test__start_process_Should_StartProcessAndAddToProcesses_When_Called(self, process_patch, *patches):
@@ -188,8 +224,9 @@ class TestProcess(unittest.TestCase):
         message_queue_mock = Mock()
         to_process = [0, {'bay': 1}]
         processes = {}
+        result_queue_mock = Mock()
 
-        start_process(function_mock, shared_data, message_queue_mock, to_process, processes)
+        start_process(function_mock, shared_data, message_queue_mock, to_process, processes, result_queue_mock)
 
         process_mock.start.assert_called_once_with()
         self.assertEqual(processes, {'0': process_mock})
@@ -223,11 +260,12 @@ class TestProcess(unittest.TestCase):
             True
         ]
         processes = []
-        result = start_processes(function_mock, shared_data, num_processes, to_process_queue_mock, processes)
+        result_queue_mock = Mock()
+        result = start_processes(function_mock, shared_data, num_processes, to_process_queue_mock, processes, result_queue_mock)
 
         self.assertEqual(result, queue_patch.return_value)
         self.assertEqual(len(start_process_patch.mock_calls), 5)
-        self.assertTrue(call(function_mock, shared_data, queue_patch.return_value, '1', processes) in start_process_patch.mock_calls)
+        self.assertTrue(call(function_mock, shared_data, queue_patch.return_value, '1', processes, result_queue_mock) in start_process_patch.mock_calls)
 
     @patch('mpcurses.process.Queue')
     @patch('mpcurses.process.start_process')
@@ -246,6 +284,28 @@ class TestProcess(unittest.TestCase):
             True
         ]
         processes = {}
-        start_processes(function_mock, shared_data, num_processes, to_process_queue_mock, processes)
+        result_queue_mock = Mock()
+        start_processes(function_mock, shared_data, num_processes, to_process_queue_mock, processes, result_queue_mock)
 
         self.assertEqual(len(start_process_patch.mock_calls), 2)
+
+    def test__update_result_Should_UpdateProcessDataWithResultData_When_Called(self, *patches):
+        result_queue_mock = Mock()
+        result_queue_mock.get.side_effect = [
+            {'0': 'result from process 0'},
+            {'1': 'result from process 1'},
+            {'2': 'result from process 2'},
+            Empty('empty')
+        ]
+        process_data = [
+            {'key': 'value0'},
+            {'key': 'value1'},
+            {'key': 'value2'}
+        ]
+        update_result(process_data, result_queue_mock)
+        expected_result = [
+            {'key': 'value0', 'result': 'result from process 0'},
+            {'key': 'value1', 'result': 'result from process 1'},
+            {'key': 'value2', 'result': 'result from process 2'}
+        ]
+        self.assertEqual(process_data, expected_result)

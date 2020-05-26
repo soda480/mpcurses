@@ -54,7 +54,7 @@ def setup_process_queue(process_offset_data):
     return queue
 
 
-def start_process(function, shared_data, message_queue, process_offset_data, active_processes):
+def start_process(function, shared_data, message_queue, process_offset_data, active_processes, result_queue):
     """ start background process and update active processes dictionary with the process meta-data for the respective process offset
 
         process target is function - callable object to be invoked
@@ -66,6 +66,7 @@ def start_process(function, shared_data, message_queue, process_offset_data, act
         each process will be started with the following key word arguments:
             message_queue - thread-safe message queue that the process can use to send messages back to the controller
             offset - integer value representing the offset for the process
+            result_queue - thread-safe queue were results of process will be stored
 
         Parameters:
             function (callable): callable object that each spawned process will execute as their target
@@ -74,6 +75,7 @@ def start_process(function, shared_data, message_queue, process_offset_data, act
             process_offset_data (list): respresent process offset and data to send spawned process
             active_processes (dict): dictionary maintaining meta-data about all active processes
                 will be updated with process meta-data for respective process offset
+            result_queue (Queue): thread-safe queue were process results will be stored
         Returns:
             None
     """
@@ -84,7 +86,9 @@ def start_process(function, shared_data, message_queue, process_offset_data, act
         args=(process_data, shared_data),
         kwargs={
             'message_queue': message_queue,
-            'offset': process_offset})
+            'offset': process_offset,
+            'result_queue': result_queue
+        })
     logger.debug('starting background process for offset {} with data {}'.format(process_offset, process_data))
     process.start()
     logger.info('started background process for offset {} with process id {}'.format(process_offset, process.pid))
@@ -92,7 +96,7 @@ def start_process(function, shared_data, message_queue, process_offset_data, act
     active_processes[str(process_offset)] = process
 
 
-def start_processes(function, shared_data, processes_to_start, process_queue, active_processes):
+def start_processes(function, shared_data, processes_to_start, process_queue, active_processes, result_queue):
     """ start background processes
 
         Parameters:
@@ -101,6 +105,7 @@ def start_processes(function, shared_data, processes_to_start, process_queue, ac
             processes_to_start (int): number of processes to spawn
             process_queue (queue): queue representing all processes that need to be started - contains offset and process data for each process
             active_processes (dict): dictionary maintaining meta-data about all active processes
+            result_queue (Queue): thread-safe queue were process results will be stored
         Returns:
             queue: thread-safe queue to serve as message queue between main process and spawned processes
     """
@@ -112,7 +117,7 @@ def start_processes(function, shared_data, processes_to_start, process_queue, ac
             logger.debug('the process queue is empty - no more processes need to be started')
             break
         # pop item off of the process_queue - process offset data will be passed to process that is started
-        start_process(function, shared_data, message_queue, process_queue.get(), active_processes)
+        start_process(function, shared_data, message_queue, process_queue.get(), active_processes, result_queue)
     logger.info('started {} background proceses'.format(len(active_processes)))
     return message_queue
 
@@ -126,7 +131,7 @@ def send_process_state(active_processes, process_queue, screen, screen_layout, p
         update_screen('mpcurses: a process has completed', screen, screen_layout)
 
 
-def _execute(screen, function, process_data, shared_data, number_of_processes, init_messages, screen_layout, active_processes):
+def _execute(screen, function, process_data, shared_data, number_of_processes, init_messages, screen_layout, active_processes, result_queue):
     """ private execute api
 
         spawns child processes as dictated by process_data and manages displaying spawned process messages to screen if screen_layout is defined
@@ -143,6 +148,7 @@ def _execute(screen, function, process_data, shared_data, number_of_processes, i
             init_messages (list): list of initialization messages to send screen
             screen_layout (dict): dictionary containing meta-data for how logged messages for each spawned process should be displayed on screen
             active_processes (dict): dictionary maintaining meta-data about all active processes
+            result_queue (Queue): thread-safe queue were process results will be stored
         Returns:
             None
     """
@@ -155,7 +161,7 @@ def _execute(screen, function, process_data, shared_data, number_of_processes, i
     echo_to_screen(screen, shared_data, screen_layout)
 
     process_queue = setup_process_queue(process_data)
-    message_queue = start_processes(function, shared_data, number_of_processes, process_queue, active_processes)
+    message_queue = start_processes(function, shared_data, number_of_processes, process_queue, active_processes, result_queue)
 
     # TODO: figure a better way to send process data
     send_process_state(active_processes, process_queue, screen, screen_layout)
@@ -183,7 +189,7 @@ def _execute(screen, function, process_data, shared_data, number_of_processes, i
                             break
                     else:
                         # we still have items in the process_queue lets start them
-                        start_process(function, shared_data, message_queue, process_queue.get(), active_processes)
+                        start_process(function, shared_data, message_queue, process_queue.get(), active_processes, result_queue)
 
                     send_process_state(active_processes, process_queue, screen, screen_layout)
                 else:
@@ -199,6 +205,26 @@ def _execute(screen, function, process_data, shared_data, number_of_processes, i
 
     update_screen('mpcurses: Ended:{}'.format(datetime.now().strftime('%m/%d/%Y %H:%M:%S')), screen, screen_layout)
     finalize_screen(screen, screen_layout)
+
+
+def terminate_processes(active_processes):
+    """ terminate active processes
+    """
+    for offset, process in active_processes.items():
+        logger.info('killing process for offset {} with process id {}'.format(offset, process.pid))
+        process.terminate()
+
+
+def update_result(process_data, result_queue):
+    """ populate process data with data from result queue
+    """
+    while True:
+        try:
+            item = result_queue.get(False)
+            for offset, result in item.items():
+                process_data[int(offset)]['result'] = result
+        except Empty:
+            break
 
 
 def execute(function=None, process_data=None, shared_data=None, number_of_processes=None, init_messages=None, screen_layout=None):
@@ -225,7 +251,10 @@ def execute(function=None, process_data=None, shared_data=None, number_of_proces
     if not init_messages:
         init_messages = []
     active_processes = {}
-    process_data_offset = [(process_data.index(item), item) for item in process_data]
+    process_data_offset = [
+        (process_data.index(item), item) for item in process_data
+    ]
+    result_queue = Queue()
     try:
         if screen_layout:
             wrapper(
@@ -236,7 +265,8 @@ def execute(function=None, process_data=None, shared_data=None, number_of_proces
                 number_of_processes,
                 init_messages,
                 screen_layout,
-                active_processes)
+                active_processes,
+                result_queue)
         else:
             _execute(
                 None,
@@ -246,10 +276,12 @@ def execute(function=None, process_data=None, shared_data=None, number_of_proces
                 number_of_processes,
                 init_messages,
                 None,
-                active_processes)
+                active_processes,
+                result_queue)
+
+        update_result(process_data, result_queue)
+
     except KeyboardInterrupt:
         logger.info('Keyboard Interrupt signal received - killing all active processes')
-        for offset, process in active_processes.items():
-            logger.info('killing process for offset {} with process id {}'.format(offset, process.pid))
-            process.terminate()
+        terminate_processes(active_processes)
         sys.exit(-1)

@@ -50,6 +50,8 @@ def queue_handler(function):
 
         offset = kwargs.pop('offset', 0)
         message_queue = kwargs.pop('message_queue', None)
+        result_queue = kwargs.pop('result_queue', None)
+        result = None
 
         if message_queue:
             handler = QueueHandler(message_queue, offset)
@@ -59,7 +61,8 @@ def queue_handler(function):
             root_logger.setLevel(logging.DEBUG)
 
         try:
-            return function(*args, **kwargs)
+            result = function(*args, **kwargs)
+            return result
 
         except Exception as exception:
             logger.error(str(exception))
@@ -67,6 +70,11 @@ def queue_handler(function):
             logger.debug('ERROR')
 
         finally:
+            # add result to result queue with offset index
+            if result_queue:
+                result_queue.put({
+                    offset: result
+                })
             # log control message that method completed
             logger.debug('DONE')
             if message_queue:

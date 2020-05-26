@@ -59,12 +59,6 @@ def get_screen_layout():
             'clear': True,
             'regex': '^processing network "(?P<value>.*)"$'
         },
-        # 'clear_network': {
-        #     'position': (1, 20),
-        #     'replace_text': ' ',
-        #     'clear': True,
-        #     'regex': '^network processing complete$',
-        # },
         'to_process': {
             'position': (2, 8),
             'text': 'To Process: 0',

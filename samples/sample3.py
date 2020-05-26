@@ -5,6 +5,7 @@ from mpcurses import execute
 
 from datetime import datetime
 from time import sleep
+from os import getenv
 import random
 import uuid
 import functools
@@ -69,7 +70,7 @@ def update_server_firmware(bay_number, servername, firmware_version):
 
 
 @queue_handler
-def update_firmware(process_data, shared_data):
+def update_firmware(process_data, *args):
     bay_number = str(process_data['bay'])
     servername = process_data['servername']
     firmware_version = '2.64'

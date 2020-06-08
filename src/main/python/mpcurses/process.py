@@ -222,6 +222,7 @@ def update_result(process_data, result_queue):
         try:
             item = result_queue.get(False)
             for offset, result in item.items():
+                logger.debug('adding result of process with offset {}'.format(offset))
                 process_data[int(offset)]['result'] = result
         except Empty:
             break

@@ -8,7 +8,7 @@ from time import sleep
 from os import getenv
 import random
 import uuid
-import functools
+import sys
 
 import logging
 logger = logging.getLogger(__name__)
@@ -33,12 +33,12 @@ def get_servers(bays):
 
 
 def simulate_error(value, message):
-    if value > 13:
+    if value > 9:
         raise Exception(message)
 
 
 def simulate_work(message):
-    value = random.choice(range(3, 15))
+    value = random.choice(range(3, 11))
     sleep(value)
     simulate_error(value, message)
 
@@ -84,6 +84,7 @@ def update_firmware(process_data, *args):
 
     except Exception as exception:
         logger.error(str(exception))
+        return exception
 
     finally:
         logger.debug('processing next bay')
@@ -366,12 +367,15 @@ def main():
     """ main program
     """
     bays = range(1,17)
-    servers = get_servers(bays)
+    process_data = get_servers(bays)
     execute(
         function=update_firmware,
-        process_data=servers,
+        process_data=process_data,
         number_of_processes=5,
         screen_layout=get_screen_layout())
+
+    if any([process['result'] for process in process_data]):
+        sys.exit(-1)
 
 
 if __name__ == '__main__':

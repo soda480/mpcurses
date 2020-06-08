@@ -93,6 +93,14 @@ class TestHandler(unittest.TestCase):
         call3 = call('#3-DONE')
         self.assertEqual(message_queue_mock.put.mock_calls, [call1, call2, call3])
 
+    def test__queue_handler_Should_AddExceptionToResultQueue_When_FunctionThrowsException(self, *patches):
+        function_mock = Mock()
+        function_mock.side_effect = Exception('function exception')
+        message_queue_mock = Mock()
+        result_queue_mock = Mock()
+        queue_handler(function_mock)(offset=3, message_queue=message_queue_mock, result_queue=result_queue_mock)
+        result_queue_mock.put.assert_called_once_with({3: function_mock.side_effect})
+
     @patch('mpcurses.handler.Handler')
     def test__QueueHandler_Should_PutInfoMessageToMessageQueue_When_EmitInfoRecord(self, *patches):
         message_queue_mock = Mock()

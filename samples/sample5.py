@@ -44,7 +44,7 @@ def main():
         {'range': '20001-30000'}
     ]
     print('running...')
-    result = execute(
+    execute(
         function=check_primes,
         process_data=process_data,
         number_of_processes=3)

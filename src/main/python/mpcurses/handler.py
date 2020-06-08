@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 class QueueHandler(Handler):
+
     def __init__(self, message_queue, offset):
         super(QueueHandler, self).__init__()
         self.message_queue = message_queue
@@ -43,6 +44,7 @@ class QueueHandler(Handler):
 def queue_handler(function):
     """ adds QueueHandler to rootLogger in order to send log messages to a message queue
     """
+
     def _queue_handler(*args, **kwargs):
         """ internal decorator for message queue handler
         """
@@ -65,7 +67,8 @@ def queue_handler(function):
             return result
 
         except Exception as exception:
-            logger.error(str(exception))
+            result = exception
+            logger.error(str(exception), exc_info=True)
             # log control message that an error occurred
             logger.debug('ERROR')
 

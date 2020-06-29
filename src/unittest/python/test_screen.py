@@ -40,6 +40,7 @@ from mpcurses.screen import get_category_count
 from mpcurses.screen import get_category_value
 from mpcurses.screen import get_category_x_pos
 from mpcurses.screen import get_category_y_pos
+from mpcurses.screen import initialize_text
 
 import sys
 import logging
@@ -611,23 +612,37 @@ class TestScreen(unittest.TestCase):
                 'text': 'Title:',
             }
         }
-        result = get_category_x_pos('start', screen_layout)
+        result = get_category_x_pos('start', 0, screen_layout)
         expected_result = 19
         self.assertEqual(result, expected_result)
 
-    @patch('mpcurses.screen.get_position')
-    def test__get_category_x_pos_Should_ReturnExpected_When_NoText(self, get_position_patch, *patches):
-        get_position_patch.return_value = 6
+    def test__get_category_x_pos_Should_ReturnExpected_When_NoText(self, *patches):
         screen_layout = {
             'start': {
                 'position': (5, 12),
             }
         }
-        result = get_category_x_pos('start', screen_layout)
+        result = get_category_x_pos('start', 0, screen_layout)
         expected_result = 12
         self.assertEqual(result, expected_result)
 
-    def test__get_category_y_pos_Should_ReturnExpected_When_Table(self, *patches):
+    def test__get_category_x_pos_Should_ReturnExpected_When_TableWraparound(self, *patches):
+        screen_layout = {
+            'table': {
+                'rows': 3,
+                'width': 40,
+                'cols': 3
+            },
+            'start': {
+                'position': (5, 12),
+                'table': True
+            }
+        }
+        result = get_category_x_pos('start', 7, screen_layout)
+        expected_result = 92
+        self.assertEqual(result, expected_result)
+
+    def test__get_category_y_pos_Should_ReturnExpected_When_TableNoWraparound(self, *patches):
         screen_layout = {
             'start': {
                 'position': (5, 12),
@@ -646,6 +661,22 @@ class TestScreen(unittest.TestCase):
         }
         result = get_category_y_pos('start', 4, screen_layout)
         expected_result = 5
+        self.assertEqual(result, expected_result)
+
+    def test__get_category_y_pos_Should_ReturnExpected_When_TableWraparound(self, *patches):
+        screen_layout = {
+            'table': {
+                'rows': 3,
+                'width': 40,
+                'cols': 3
+            },
+            'start': {
+                'position': (5, 12),
+                'table': True
+            }
+        }
+        result = get_category_y_pos('start', 7, screen_layout)
+        expected_result = 6
         self.assertEqual(result, expected_result)
 
     @patch('mpcurses.screen.sanitize_message')
@@ -916,3 +947,21 @@ class TestScreen(unittest.TestCase):
 
     def test__get_position_Should_ReturnExpected_When_NoSemicolon(self, *patches):
         self.assertEqual(get_position('string'), 7)
+
+    def test__get_position_Should_ReturnExpected_When_InitText(self, *patches):
+        self.assertEqual(get_position('---'), -1)
+
+    @patch('mpcurses.screen.curses')
+    def test__initialize_text_Should_CallExpected_When_Table(self, *patches):
+        window_mock = Mock()
+        screen_layout = {
+            'cat1': {
+                'table': True,
+                'position': (2, 0),
+                'text': '---',
+                'text_color': 1,
+                '_window': window_mock
+            }
+        }
+        initialize_text(4, 'cat1', screen_layout)
+        self.assertTrue(len(window_mock.addstr.mock_calls) == 4)

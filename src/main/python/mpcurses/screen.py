@@ -103,15 +103,24 @@ def initialize_counter(offsets, screen_layout):
             screen_layout['_counter_'][offset]['_modulus_count'] = 0
 
 
-def initialize_text(category_data):
+def initialize_text(offsets, category, screen_layout):
     """ initialize screen for categories containing text
     """
+    category_data = screen_layout[category]
     window = category_data['_window']
-    y_pos = category_data['position'][0]
-    x_pos = category_data['position'][1]
-    text = category_data['text']
-    text_color = category_data['text_color']
-    window.addstr(y_pos, x_pos, text, curses.color_pair(text_color))
+    if category_data.get('table'):
+        for offset in range(0, offsets):
+            window.addstr(
+                get_category_y_pos(category, offset, screen_layout),
+                get_category_x_pos(category, offset, screen_layout),
+                category_data['text'],
+                curses.color_pair(category_data['text_color']))
+    else:
+        window.addstr(
+            category_data['position'][0],
+            category_data['position'][1],
+            category_data['text'],
+            curses.color_pair(category_data['text_color']))
 
 
 def initialize_keep_count(category, offsets, screen_layout):
@@ -156,7 +165,7 @@ def initialize_screen(screen, screen_layout, offsets):
         if category == '_counter_':
             initialize_counter(offsets, screen_layout)
         if data.get('text'):
-            initialize_text(data)
+            initialize_text(offsets, category, screen_layout)
         if data.get('keep_count'):
             initialize_keep_count(category, offsets, screen_layout)
 
@@ -202,8 +211,9 @@ def get_category_values(message, screen_layout):
                 value = None
                 if match.groups():
                     value = match.group('value')
-                    if len(value) > 100:
-                        value = value[0:100] + '...'
+                    value_len = data.get('value_len', 103)
+                    if len(value) > value_len:
+                        value = value[0:value_len - 3] + '...'
                 category_values.append((category, value))
     return category_values
 
@@ -225,6 +235,8 @@ def get_position(text):
     """
     if ':' in text:
         return text.index(':') + 1
+    elif text == len(text) * '-':
+        return -1
     else:
         return len(text) + 1
 
@@ -314,12 +326,18 @@ def get_category_value(category, offset, initial_value, screen_layout):
     return value
 
 
-def get_category_x_pos(category, screen_layout):
+def get_category_x_pos(category, offset, screen_layout):
     """ return x pos for category in screen layout
     """
     x_pos = screen_layout[category]['position'][1]
     if screen_layout[category].get('text', ''):
         x_pos = x_pos + get_position(screen_layout[category]['text']) + 1
+    if screen_layout.get('table'):
+        rows = screen_layout['table']['rows']
+        width = screen_layout['table']['width']
+        if offset >= rows:
+            x_pos += int(offset / rows) * width
+            # logger.debug(f'table offset {offset} x_pos is {x_pos}')
     return x_pos
 
 
@@ -329,6 +347,11 @@ def get_category_y_pos(category, offset, screen_layout):
     y_pos = screen_layout[category]['position'][0]
     if screen_layout[category].get('table'):
         y_pos += offset
+        if screen_layout.get('table'):
+            rows = screen_layout['table']['rows']
+            if offset >= rows:
+                y_pos -= int(offset / rows) * rows
+                # logger.debug(f'table offset {offset} y_pos is {y_pos}')
     return y_pos
 
 
@@ -349,7 +372,7 @@ def update_screen(message, screen, screen_layout):
         for category_value in category_values:
             category = category_value[0]
             y_pos = get_category_y_pos(category, offset, screen_layout)
-            x_pos = get_category_x_pos(category, screen_layout)
+            x_pos = get_category_x_pos(category, offset, screen_layout)
             color = get_category_color(category, sanitized_message, screen_layout)
             value = get_category_value(category, offset, category_value[1], screen_layout)
 
@@ -412,6 +435,7 @@ def echo_to_screen(screen, data, screen_layout, offset=None):
             message = "'{}' has {} items".format(key, len(value))
         if offset:
             message = '#{}-{}'.format(offset, message)
+        logger.debug(message)
         update_screen(message, screen, screen_layout)
         if offset:
             # send empty message at offset

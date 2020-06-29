@@ -39,6 +39,8 @@ The result is a screen that is being updated dynamically from one or more concur
 | samples/sample2.py | network name translator/ single process, screen update, count, visual indicator  |
 | samples/sample3.py | firmware update simulator / multi-process, screen table update, count, visual indicator, process status |
 | samples/sample4.py | prime number counter / multi-process, screen update, count, progress bar |
+| samples/sample5.py | prime number counter / multi-process, no screen |
+| samples/sample6.py | wrap-around table / multi-process, screen table update, process status |
 | samples/colors.py  | displays available colors - most common ones |
 
 

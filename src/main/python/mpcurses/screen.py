@@ -199,22 +199,38 @@ def finalize_screen(screen, screen_layout):
             return
 
 
-def get_category_values(message, screen_layout):
+def get_category_values(message, offset, screen_layout):
     """ return list of tuples consisting of categories and their values from screen layout that match message
     """
     category_values = []
     for category, data in screen_layout.items():
         regex = data.get('regex')
         if regex:
+
             match = re.match(regex, message)
             if match:
+
                 value = None
                 if match.groups():
                     value = match.group('value')
-                    value_len = data.get('value_len', 103)
-                    if len(value) > value_len:
-                        value = value[0:value_len - 3] + '...'
+                    length = len(value)
+                    width = data.get('width', 103)
+
+                    if length > width:
+                        value = f'{value[0:width - 3]}...'
+
+                    if data.get('right_justify'):
+                        spaces = ' ' * (width - length)
+                        value = f'{spaces}{value}'
+
+                if screen_layout[category].get('keep_count'):
+                    value = get_category_count(category, offset, screen_layout)
+
+                if screen_layout[category].get('replace_text'):
+                    value = screen_layout[category]['replace_text']
+
                 category_values.append((category, value))
+
     return category_values
 
 
@@ -315,17 +331,6 @@ def get_category_count(category, offset, screen_layout):
         return str(screen_layout[category]['_count']).zfill(zfill)
 
 
-def get_category_value(category, offset, initial_value, screen_layout):
-    """ return value for category in screen layout
-    """
-    value = initial_value
-    if screen_layout[category].get('keep_count'):
-        value = get_category_count(category, offset, screen_layout)
-    if screen_layout[category].get('replace_text'):
-        value = screen_layout[category]['replace_text']
-    return value
-
-
 def get_category_x_pos(category, offset, screen_layout):
     """ return x pos for category in screen layout
     """
@@ -366,15 +371,13 @@ def update_screen(message, screen, screen_layout):
         return
 
     offset, sanitized_message = sanitize_message(message)
-    category_values = get_category_values(sanitized_message, screen_layout)
+    category_values = get_category_values(sanitized_message, offset, screen_layout)
 
     try:
-        for category_value in category_values:
-            category = category_value[0]
+        for (category, value) in category_values:
             y_pos = get_category_y_pos(category, offset, screen_layout)
             x_pos = get_category_x_pos(category, offset, screen_layout)
             color = get_category_color(category, sanitized_message, screen_layout)
-            value = get_category_value(category, offset, category_value[1], screen_layout)
 
             process_clear(category, y_pos, x_pos, screen_layout)
 

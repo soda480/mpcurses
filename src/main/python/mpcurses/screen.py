@@ -452,3 +452,39 @@ def refresh_screen(screen):
         return
 
     screen.refresh()
+
+
+def get_table_position(screen_layout):
+    """ return first position of table encountered within screen layout
+    """
+    for _, data in screen_layout.items():
+        if data.get('table'):
+            return data['position']
+
+
+def get_positions_to_update(screen_layout, table_position, delta):
+    """ return dict of items representing categories and updated positions within screen layout
+    """
+    positions = {}
+    for category, data in screen_layout.items():
+        (y_pos, x_pos) = data.get('position', (0, 0))
+        if y_pos > table_position:
+            positions[category] = (y_pos - delta, x_pos)
+    return positions
+
+
+def update_positions(screen_layout, positions):
+    """ update positions in screen layout
+    """
+    for category, position in positions.items():
+        screen_layout[category]['position'] = position
+
+
+def squash_table(screen_layout, delta):
+    """ squash table
+    """
+    logger.debug(f'squashing table by {delta} positions')
+    table_position = get_table_position(screen_layout)
+    positions = get_positions_to_update(screen_layout, table_position[0], delta)
+    logger.debug(f'the following positions will be updated:\n{positions}')
+    update_positions(screen_layout, positions)

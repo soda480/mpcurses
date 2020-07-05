@@ -26,7 +26,7 @@ from mpcurses.process import _execute
 from mpcurses.process import terminate_processes
 from mpcurses.process import update_result
 from mpcurses.process import execute
-from mpcurses.process import validate_process_data
+from mpcurses.process import validate_table
 
 from queue import Empty
 
@@ -174,7 +174,7 @@ class TestProcess(unittest.TestCase):
 
         self.assertEqual(len(process_queue_mock.get.mock_calls), 2)
 
-    @patch('mpcurses.process.validate_process_data')
+    @patch('mpcurses.process.validate_table')
     @patch('mpcurses.process.terminate_processes')
     @patch('mpcurses.process.sys')
     @patch('mpcurses.process.wrapper')
@@ -199,7 +199,7 @@ class TestProcess(unittest.TestCase):
         process_mock1.terminate.assert_called_once_with()
         process_mock2.terminate.assert_called_once_with()
 
-    @patch('mpcurses.process.validate_process_data')
+    @patch('mpcurses.process.validate_table')
     @patch('mpcurses.process.update_result')
     @patch('mpcurses.process.Queue')
     @patch('mpcurses.process._execute')
@@ -313,13 +313,27 @@ class TestProcess(unittest.TestCase):
         ]
         self.assertEqual(process_data, expected_result)
 
-    def test__validate_process_data_ShouldReturn_When_NoTable(self, *patches):
-        self.assertIsNone(validate_process_data(1, None))
+    def test__validate_table_ShouldReturn_When_NoTable(self, *patches):
+        self.assertIsNone(validate_table(1, {}))
 
-    def test__validate_process_data_RaiseException_When_MoreProcessesThanTableEntries(self, *patches):
-        table = {
-            'rows': 30,
-            'cols': 2
+    def test__validate_table_RaiseException_When_MoreProcessesThanTableEntries(self, *patches):
+        screen_layout = {
+            'table': {
+                'rows': 30,
+                'cols': 2
+            }
         }
         with self.assertRaises(Exception):
-            validate_process_data(100, table)
+            validate_table(100, screen_layout)
+
+    @patch('mpcurses.process.squash_table')
+    def test__validate_table_Should_CallExpected_When_Squash(self, squash_table_patch, *patches):
+        screen_layout = {
+            'table': {
+                'rows': 30,
+                'cols': 2,
+                'squash': True
+            }
+        }
+        validate_table(11, screen_layout)
+        squash_table_patch.assert_called_once_with(screen_layout, 19)

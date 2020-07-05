@@ -59,7 +59,8 @@ def get_screen_layout():
         'table': {
             'rows': 20,
             'cols': 3,
-            'width': 50
+            'width': 50,
+            'squash': True
         },
         '_on': {
             'position': (1, 0),
@@ -185,7 +186,7 @@ def configure_logging():
 
 def main():
     configure_logging()
-    items = get_items(60)
+    items = get_items(random.randint(1, 60))
     execute(
         function=process_item,
         process_data=[

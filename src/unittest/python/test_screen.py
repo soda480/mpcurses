@@ -40,6 +40,10 @@ from mpcurses.screen import get_category_count
 from mpcurses.screen import get_category_x_pos
 from mpcurses.screen import get_category_y_pos
 from mpcurses.screen import initialize_text
+from mpcurses.screen import get_table_position
+from mpcurses.screen import get_positions_to_update
+from mpcurses.screen import update_positions
+from mpcurses.screen import squash_table
 
 import sys
 import logging
@@ -972,3 +976,84 @@ class TestScreen(unittest.TestCase):
         }
         initialize_text(4, 'cat1', screen_layout)
         self.assertTrue(len(window_mock.addstr.mock_calls) == 4)
+
+    def test__get_table_position_Should_ReturnExpected_When_Called(self, *patches):
+        screen_layout = {
+            'category1': {
+                'position': (2, 2)
+            },
+            'category2': {
+                'position': (2, 10)
+            },
+            'category3': {
+                'position': (3, 3),
+                'table': True
+            },
+            'category4': {
+                'position': (21, 14)
+            }
+        }
+        result = get_table_position(screen_layout)
+        expected_result = (3, 3)
+        self.assertEqual(result, expected_result)
+
+    def test__get_positions_to_update_Should_ReturnExpected_When_Called(self, *patches):
+        screen_layout = {
+            'category1': {
+                'position': (2, 2)
+            },
+            'category2': {
+                'position': (2, 10)
+            },
+            'category3': {
+                'position': (3, 3),
+                'table': True
+            },
+            'category4': {
+                'position': (21, 14)
+            },
+            'category5': {
+                'position': (22, 8)
+            }
+        }
+        result = get_positions_to_update(screen_layout, 3, 10)
+        expected_result = {
+            'category4': (11, 14),
+            'category5': (12, 8)
+        }
+        self.assertEqual(result, expected_result)
+
+    def test__update_positions_Should_DoExpected_When_Called(self, *patches):
+        screen_layout = {
+            'category1': {
+                'position': (2, 2)
+            },
+            'category2': {
+                'position': (2, 10)
+            },
+            'category3': {
+                'position': (3, 3),
+                'table': True
+            },
+            'category4': {
+                'position': (21, 14)
+            },
+            'category5': {
+                'position': (22, 8)
+            }
+        }
+        positions = {
+            'category4': (11, 14),
+            'category5': (12, 8)
+        }
+        update_positions(screen_layout, positions)
+        self.assertEqual(screen_layout['category4']['position'], positions['category4'])
+        self.assertEqual(screen_layout['category5']['position'], positions['category5'])
+
+    @patch('mpcurses.screen.get_table_position', return_value=(3, 3))
+    @patch('mpcurses.screen.get_positions_to_update')
+    @patch('mpcurses.screen.update_positions')
+    def test__squash_table_Should_CallExpected_When_Called(self, update_positions_patch, get_positions_to_update_patch, *patches):
+        screen_layout = {}
+        squash_table(screen_layout, 10)
+        update_positions_patch.assert_called_once_with(screen_layout, get_positions_to_update_patch.return_value)

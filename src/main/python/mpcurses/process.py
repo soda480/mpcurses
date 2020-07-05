@@ -29,6 +29,7 @@ from .screen import update_screen
 from .screen import blink_running
 from .screen import echo_to_screen
 from .screen import refresh_screen
+from .screen import squash_table
 
 import logging
 from logging import Handler
@@ -228,14 +229,19 @@ def update_result(process_data, result_queue):
             break
 
 
-def validate_process_data(processes, table):
+def validate_table(processes, screen_layout):
     """ validate wraparound table
     """
+    table = screen_layout.get('table')
     if not table:
         return
     entries = table.get('rows', 0) * table.get('cols', 0)
     if processes > entries:
         raise Exception(f'table definition of {entries} entries not sufficient for {processes} processes')
+    if table.get('squash'):
+        rows = table.get('rows', 0)
+        if processes < rows:
+            squash_table(screen_layout, rows - processes)
 
 
 def execute(function=None, process_data=None, shared_data=None, number_of_processes=None, init_messages=None, screen_layout=None):
@@ -268,7 +274,7 @@ def execute(function=None, process_data=None, shared_data=None, number_of_proces
     result_queue = Queue()
     try:
         if screen_layout:
-            validate_process_data(len(process_data), screen_layout.get('_table'))
+            validate_table(len(process_data), screen_layout)
             wrapper(
                 _execute,
                 function,

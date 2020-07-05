@@ -37,10 +37,13 @@ from mpcurses.screen import get_position
 from mpcurses.screen import process_counter
 from mpcurses.screen import get_category_color
 from mpcurses.screen import get_category_count
-from mpcurses.screen import get_category_value
 from mpcurses.screen import get_category_x_pos
 from mpcurses.screen import get_category_y_pos
 from mpcurses.screen import initialize_text
+from mpcurses.screen import get_table_position
+from mpcurses.screen import get_positions_to_update
+from mpcurses.screen import update_positions
+from mpcurses.screen import squash_table
 
 import sys
 import logging
@@ -384,33 +387,71 @@ class TestScreen(unittest.TestCase):
         }
 
         message = 'processing bay 4 at: -date-time-'
-        result = get_category_values(message, screen_layout)
+        result = get_category_values(message, 0, screen_layout)
         expected_result = [
             ('start', '-date-time-'),
             ('message', 'processing bay 4 at: -date-time-')
         ]
         self.assertEqual(result, expected_result)
 
-    def test__get_category_values_Should_ReturnReducedValue_When_MatchGreaterThanAllowed(self, *patches):
+    def test__get_category_values_Should_ReturnExpected_When_LengthGreaterThanWidth(self, *patches):
         screen_layout = {
-            'firmware': {
-                'regex': '^.* firmware version for bay \\d+ is "(?P<value>.*)"$'
-            },
-            'start': {
-                'regex': '^processing bay \\d+ at: (?P<value>.*)$'
-            },
             'message': {
                 'regex': '^(?P<value>.*)$',
-            },
-            'start_new_bay': {
-                'regex': '^processing next bay$'
             }
         }
 
         message = 'eramos todos de papel, liso y blanco, sin dolor, y fuimos hechos para andar, de par en par, sin reclamar, hare tiempo me dijeron que aqui no pasa nada'
-        result = get_category_values(message, screen_layout)
+        result = get_category_values(message, 0, screen_layout)
         expected_result = [
             ('message', 'eramos todos de papel, liso y blanco, sin dolor, y fuimos hechos para andar, de par en par, sin recl...'),
+        ]
+        self.assertEqual(result, expected_result)
+
+    def test__get_category_values_Should_ReturnExpected_When_RightJustify(self, *patches):
+        screen_layout = {
+            'message': {
+                'width': 20,
+                'right_justify': True,
+                'regex': '^(?P<value>.*)$',
+            }
+        }
+
+        message = 'cambridge-limited'
+        result = get_category_values(message, 0, screen_layout)
+        expected_result = [
+            ('message', '   cambridge-limited'),
+        ]
+        self.assertEqual(result, expected_result)
+
+    @patch('mpcurses.screen.get_category_count', return_value='012')
+    def test__get_category_values_Should_ReturnExpected_When_KeepCount(self, *patches):
+        screen_layout = {
+            'message': {
+                'keep_count': True,
+                'regex': '^network .* was translated$',
+            }
+        }
+
+        message = 'network cambridge-limited was translated'
+        result = get_category_values(message, 0, screen_layout)
+        expected_result = [
+            ('message', '012'),
+        ]
+        self.assertEqual(result, expected_result)
+
+    def test__get_category_values_Should_ReturnExpected_When_ReplaceText(self, *patches):
+        screen_layout = {
+            'message': {
+                'replace_text': '=>',
+                'regex': '^processing item .*$',
+            }
+        }
+
+        message = 'processing item cambridge-limited'
+        result = get_category_values(message, 0, screen_layout)
+        expected_result = [
+            ('message', '=>'),
         ]
         self.assertEqual(result, expected_result)
 
@@ -570,39 +611,6 @@ class TestScreen(unittest.TestCase):
         expected_result = '00022'
         self.assertEqual(result, expected_result)
 
-    @patch('mpcurses.screen.get_category_count')
-    def test__get_category_value_Should_ReturnGetCategoryCountResult_When_KeepCountNoReplaceText(self, get_category_count_patch, *patches):
-        screen_layout = {
-            'translated': {
-                'keep_count': True
-            }
-        }
-        result = get_category_value('translated', 1, '-initial-value-', screen_layout)
-        expected_result = get_category_count_patch.return_value
-        self.assertEqual(result, expected_result)
-
-    @patch('mpcurses.screen.get_category_count')
-    def test__get_category_value_Should_ReturnReplaceText_When_KeepCountAndReplaceText(self, *patches):
-        screen_layout = {
-            'translated': {
-                'keep_count': True,
-                'replace_text': '*'
-            }
-        }
-        result = get_category_value('translated', 1, '-initial-value-', screen_layout)
-        expected_result = '*'
-        self.assertEqual(result, expected_result)
-
-    @patch('mpcurses.screen.get_category_count')
-    def test__get_category_value_Should_ReturnInitialValue_When_NoKeepCountAndNoReplaceText(self, *patches):
-        screen_layout = {
-            'translated': {
-            }
-        }
-        result = get_category_value('translated', 1, '-initial-value-', screen_layout)
-        expected_result = '-initial-value-'
-        self.assertEqual(result, expected_result)
-
     @patch('mpcurses.screen.get_position')
     def test__get_category_x_pos_Should_ReturnExpected_When_Text(self, get_position_patch, *patches):
         get_position_patch.return_value = 6
@@ -697,7 +705,8 @@ class TestScreen(unittest.TestCase):
     def test__update_screen_Should_CallExpected_When_ReplaceText(self, sanitize_message_patch, get_category_values_patch, color_pair_patch, *patches):
         sanitize_message_patch.return_value = (5, 'processing bay 5 at: 01/30/18 13:24')
         get_category_values_patch.return_value = [
-            ['start', 'processing bay 5 at: 01/30/18 13:24'],
+            # ['start', 'processing bay 5 at: 01/30/18 13:24'],
+            ['start', '*'],
         ]
         window_mock = Mock()
         screen_layout = {
@@ -775,7 +784,8 @@ class TestScreen(unittest.TestCase):
     def test__update_screen_Should_CallExpected_When_TextKeepCountCounterTable(self, sanitize_message_patch, get_category_values_patch, color_pair_patch, process_counter_patch, *patches):
         sanitize_message_patch.return_value = (3, 'network powerdac1234 was translated')
         get_category_values_patch.return_value = [
-            ['translated', 'network powerdac1234 was translated'],
+            # ['translated', 'network powerdac1234 was translated'],
+            ['translated', '033'],
         ]
         window_mock = Mock()
         screen_layout = {
@@ -807,7 +817,8 @@ class TestScreen(unittest.TestCase):
     def test__update_screen_Should_CallExpected_When_TextKeepCountCounter(self, sanitize_message_patch, get_category_values_patch, color_pair_patch, process_counter_patch, *patches):
         sanitize_message_patch.return_value = (3, 'network powerdac1234 was translated')
         get_category_values_patch.return_value = [
-            ['translated', 'network powerdac1234 was translated'],
+            # ['translated', 'network powerdac1234 was translated'],
+            ['translated', '033'],
         ]
         window_mock = Mock()
         screen_layout = {
@@ -965,3 +976,84 @@ class TestScreen(unittest.TestCase):
         }
         initialize_text(4, 'cat1', screen_layout)
         self.assertTrue(len(window_mock.addstr.mock_calls) == 4)
+
+    def test__get_table_position_Should_ReturnExpected_When_Called(self, *patches):
+        screen_layout = {
+            'category1': {
+                'position': (2, 2)
+            },
+            'category2': {
+                'position': (2, 10)
+            },
+            'category3': {
+                'position': (3, 3),
+                'table': True
+            },
+            'category4': {
+                'position': (21, 14)
+            }
+        }
+        result = get_table_position(screen_layout)
+        expected_result = (3, 3)
+        self.assertEqual(result, expected_result)
+
+    def test__get_positions_to_update_Should_ReturnExpected_When_Called(self, *patches):
+        screen_layout = {
+            'category1': {
+                'position': (2, 2)
+            },
+            'category2': {
+                'position': (2, 10)
+            },
+            'category3': {
+                'position': (3, 3),
+                'table': True
+            },
+            'category4': {
+                'position': (21, 14)
+            },
+            'category5': {
+                'position': (22, 8)
+            }
+        }
+        result = get_positions_to_update(screen_layout, 3, 10)
+        expected_result = {
+            'category4': (11, 14),
+            'category5': (12, 8)
+        }
+        self.assertEqual(result, expected_result)
+
+    def test__update_positions_Should_DoExpected_When_Called(self, *patches):
+        screen_layout = {
+            'category1': {
+                'position': (2, 2)
+            },
+            'category2': {
+                'position': (2, 10)
+            },
+            'category3': {
+                'position': (3, 3),
+                'table': True
+            },
+            'category4': {
+                'position': (21, 14)
+            },
+            'category5': {
+                'position': (22, 8)
+            }
+        }
+        positions = {
+            'category4': (11, 14),
+            'category5': (12, 8)
+        }
+        update_positions(screen_layout, positions)
+        self.assertEqual(screen_layout['category4']['position'], positions['category4'])
+        self.assertEqual(screen_layout['category5']['position'], positions['category5'])
+
+    @patch('mpcurses.screen.get_table_position', return_value=(3, 3))
+    @patch('mpcurses.screen.get_positions_to_update')
+    @patch('mpcurses.screen.update_positions')
+    def test__squash_table_Should_CallExpected_When_Called(self, update_positions_patch, get_positions_to_update_patch, *patches):
+        screen_layout = {}
+        squash_table(screen_layout, 10)
+        update_positions_patch.assert_called_once_with(screen_layout, get_positions_to_update_patch.return_value)

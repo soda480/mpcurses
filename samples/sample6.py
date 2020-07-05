@@ -34,6 +34,7 @@ def simulate_work(message):
 def process_item(data, shared_data):
     item = data['item']
     logger.debug(f'processing item {item}')
+    logger.debug(f'item {item} head is at v{random.randint(0, 9)}.{random.randint(0, 9)}.{random.randint(0, 20)}')
     vectors = random.randint(20, 70)
     logger.debug(f'item {item} has {str(vectors).zfill(3)} vectors')
     for vector in range(vectors):
@@ -58,7 +59,8 @@ def get_screen_layout():
         'table': {
             'rows': 20,
             'cols': 3,
-            'width': 39
+            'width': 50,
+            'squash': True
         },
         '_on': {
             'position': (1, 0),
@@ -93,27 +95,37 @@ def get_screen_layout():
             'zfill': 3,
             'table': True
         },
-        'item_initialized': {
+        'version': {
             'position': (1, 10),
+            'text': '-------',
+            'text_color': 244,
+            'color': 244,
+            'width': 7,
+            'right_justify': True,
+            'regex': r'^item .* head is at (?P<value>.*)$',
+            'table': True
+        },
+        'item_initialized': {
+            'position': (1, 18),
             'text': '',
             'color': 244,
-            'value_len': 28,
+            'width': 28,
             'regex': r"^'item' is '(?P<value>.*)'$",
             'table': True
         },
         'item_processing': {
-            'position': (1, 10),
+            'position': (1, 18),
             'text': '',
             'color': 14,
-            'value_len': 28,
+            'width': 28,
             'regex': r'^processing item (?P<value>.*)$',
             'table': True
         },
         'item_processed': {
-            'position': (1, 10),
+            'position': (1, 18),
             'text': '',
             'color': 7,
-            'value_len': 28,
+            'width': 28,
             'regex': r'^processed item (?P<value>.*)$',
             'table': True
         },
@@ -165,7 +177,7 @@ def configure_logging():
     rootLogger = logging.getLogger()
     # must be set to this level so handlers can filter from this level
     rootLogger.setLevel(logging.DEBUG)
-    file_handler = logging.FileHandler('sample7.log')
+    file_handler = logging.FileHandler('sample6.log')
     file_formatter = logging.Formatter("%(asctime)s %(processName)s %(name)s [%(funcName)s] %(levelname)s %(message)s")
     file_handler.setFormatter(file_formatter)
     file_handler.setLevel(logging.DEBUG)
@@ -174,7 +186,7 @@ def configure_logging():
 
 def main():
     configure_logging()
-    items = get_items(60)
+    items = get_items(random.randint(1, 60))
     execute(
         function=process_item,
         process_data=[

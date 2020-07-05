@@ -199,22 +199,38 @@ def finalize_screen(screen, screen_layout):
             return
 
 
-def get_category_values(message, screen_layout):
+def get_category_values(message, offset, screen_layout):
     """ return list of tuples consisting of categories and their values from screen layout that match message
     """
     category_values = []
     for category, data in screen_layout.items():
         regex = data.get('regex')
         if regex:
+
             match = re.match(regex, message)
             if match:
+
                 value = None
                 if match.groups():
                     value = match.group('value')
-                    value_len = data.get('value_len', 103)
-                    if len(value) > value_len:
-                        value = value[0:value_len - 3] + '...'
+                    length = len(value)
+                    width = data.get('width', 103)
+
+                    if length > width:
+                        value = f'{value[0:width - 3]}...'
+
+                    if data.get('right_justify'):
+                        spaces = ' ' * (width - length)
+                        value = f'{spaces}{value}'
+
+                if screen_layout[category].get('keep_count'):
+                    value = get_category_count(category, offset, screen_layout)
+
+                if screen_layout[category].get('replace_text'):
+                    value = screen_layout[category]['replace_text']
+
                 category_values.append((category, value))
+
     return category_values
 
 
@@ -315,17 +331,6 @@ def get_category_count(category, offset, screen_layout):
         return str(screen_layout[category]['_count']).zfill(zfill)
 
 
-def get_category_value(category, offset, initial_value, screen_layout):
-    """ return value for category in screen layout
-    """
-    value = initial_value
-    if screen_layout[category].get('keep_count'):
-        value = get_category_count(category, offset, screen_layout)
-    if screen_layout[category].get('replace_text'):
-        value = screen_layout[category]['replace_text']
-    return value
-
-
 def get_category_x_pos(category, offset, screen_layout):
     """ return x pos for category in screen layout
     """
@@ -366,15 +371,13 @@ def update_screen(message, screen, screen_layout):
         return
 
     offset, sanitized_message = sanitize_message(message)
-    category_values = get_category_values(sanitized_message, screen_layout)
+    category_values = get_category_values(sanitized_message, offset, screen_layout)
 
     try:
-        for category_value in category_values:
-            category = category_value[0]
+        for (category, value) in category_values:
             y_pos = get_category_y_pos(category, offset, screen_layout)
             x_pos = get_category_x_pos(category, offset, screen_layout)
             color = get_category_color(category, sanitized_message, screen_layout)
-            value = get_category_value(category, offset, category_value[1], screen_layout)
 
             process_clear(category, y_pos, x_pos, screen_layout)
 
@@ -449,3 +452,39 @@ def refresh_screen(screen):
         return
 
     screen.refresh()
+
+
+def get_table_position(screen_layout):
+    """ return first position of table encountered within screen layout
+    """
+    for _, data in screen_layout.items():
+        if data.get('table'):
+            return data['position']
+
+
+def get_positions_to_update(screen_layout, table_position, delta):
+    """ return dict of items representing categories and updated positions within screen layout
+    """
+    positions = {}
+    for category, data in screen_layout.items():
+        (y_pos, x_pos) = data.get('position', (0, 0))
+        if y_pos > table_position:
+            positions[category] = (y_pos - delta, x_pos)
+    return positions
+
+
+def update_positions(screen_layout, positions):
+    """ update positions in screen layout
+    """
+    for category, position in positions.items():
+        screen_layout[category]['position'] = position
+
+
+def squash_table(screen_layout, delta):
+    """ squash table
+    """
+    logger.debug(f'squashing table by {delta} positions')
+    table_position = get_table_position(screen_layout)
+    positions = get_positions_to_update(screen_layout, table_position[0], delta)
+    logger.debug(f'the following positions will be updated:\n{positions}')
+    update_positions(screen_layout, positions)

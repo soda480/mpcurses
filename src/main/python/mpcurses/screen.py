@@ -337,12 +337,13 @@ def get_category_x_pos(category, offset, screen_layout):
     x_pos = screen_layout[category]['position'][1]
     if screen_layout[category].get('text', ''):
         x_pos = x_pos + get_position(screen_layout[category]['text']) + 1
-    if screen_layout.get('table'):
-        rows = screen_layout['table']['rows']
-        width = screen_layout['table']['width']
-        if offset >= rows:
-            x_pos += int(offset / rows) * width
-            # logger.debug(f'table offset {offset} x_pos is {x_pos}')
+    if screen_layout[category].get('table'):
+        if screen_layout.get('table'):
+            rows = screen_layout['table']['rows']
+            width = screen_layout['table']['width']
+            if offset >= rows:
+                x_pos += int(offset / rows) * width
+                # logger.debug(f'table offset {offset} x_pos is {x_pos}')
     return x_pos
 
 

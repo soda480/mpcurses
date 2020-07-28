@@ -19,15 +19,9 @@ def get_items(count):
     return items
 
 
-def simulate_error(value, message):
-    if value < .2:
-        raise Exception(message)
-
-
 def simulate_work(message):
     value = random.choice([.1, .15, .17, .18, .2, .25, .6])
     sleep(value)
-    simulate_error(value, message)
 
 
 @queue_handler
@@ -38,12 +32,8 @@ def process_item(data, shared_data):
     vectors = random.randint(20, 70)
     logger.debug(f'item {item} has {str(vectors).zfill(3)} vectors')
     for vector in range(vectors):
-        try:
-            simulate_work(f'processing vector {vector} for item {item}')
-            logger.debug(f'processed vector {vector} for item {item}')
-        except Exception as exception:
-            logger.error(f'{exception}')
-            continue
+        simulate_work(f'processing vector {vector} for item {item}')
+        logger.debug(f'processed vector {vector} for item {item}')
     logger.debug(f'processed item {item}')
 
 

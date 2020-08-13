@@ -51,7 +51,8 @@ Build the Docker image:
 docker image build \
 --build-arg http_proxy \
 --build-arg https_proxy \
--t mpcurses:latest .
+-t \
+mpcurses:latest .
 ```
 
 Execute the sample scripts:
@@ -61,9 +62,11 @@ docker container run \
 --rm \
 -it \
 mpcurses:latest \
+/bin/sh
+
 python samples/sample1.py
 ```
-NOTE: replace sample1.py with any of the samples described above (1-4).
+NOTE: replace sample1.py with any of the samples described above (1-6).
 
 ### Development ###
 
@@ -81,7 +84,8 @@ Build the Docker image:
 docker image build \
 --build-arg http_proxy \
 --build-arg https_proxy \
--t mpcurses:latest .
+-t \
+mpcurses:latest .
 ```
 
 Run the Docker container:

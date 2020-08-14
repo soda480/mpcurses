@@ -1,3 +1,4 @@
+![Build](https://github.com/soda480/mpcurses/workflows/CI/badge.svg)
 
 # mpcurses #
 mpcurses is a framework that exposes a simple set of APIs enabling multi-process integration with the curses screen painting library.

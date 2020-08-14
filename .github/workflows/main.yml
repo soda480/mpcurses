@@ -1,4 +1,4 @@
-name: CI
+name: build
 on:
   push:
     branches:
@@ -10,6 +10,7 @@ jobs:
   build:
     runs-on: ubuntu-16.04
     container: python:3.6-alpine
+
     steps:
     - uses: actions/checkout@v2
 
@@ -21,3 +22,17 @@ jobs:
 
     - name: Execute build
       run: pyb -X
+
+    - name: Install Codecov requirements
+      run: |
+        apk update
+        apk add bash curl
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        file: ./target/reports/coverage.xml
+        directory: ./target/reports
+        flags: unittests
+        fail_ci_if_error: true

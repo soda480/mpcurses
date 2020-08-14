@@ -1,4 +1,6 @@
-![Build](https://github.com/soda480/mpcurses/workflows/CI/badge.svg)
+[![GitHub Workflow Status](https://github.com/soda480/mpcurses/workflows/build/badge.svg)](https://github.com/soda480/mpcurses/actions)
+[![codecov](https://codecov.io/gh/soda480/mpcurses/branch/master/graph/badge.svg)](https://codecov.io/gh/soda480/mpcurses)
+[![PyPI version](https://badge.fury.io/py/mpcurses.svg)](https://badge.fury.io/py/mpcurses)
 
 # mpcurses #
 mpcurses is a framework that exposes a simple set of APIs enabling multi-process integration with the curses screen painting library.

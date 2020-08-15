@@ -56,7 +56,7 @@ class TestHandler(unittest.TestCase):
         queue_handler_object = Mock()
         queue_handler_class.return_value = queue_handler_object
 
-        function_mock = Mock()
+        function_mock = Mock(__name__='fn1')
         function_mock.return_value = 'return'
         message_queue_mock = Mock()
         result = queue_handler(function_mock)(message_queue=message_queue_mock, offset=3)
@@ -68,7 +68,7 @@ class TestHandler(unittest.TestCase):
         root_logger_mock.removeHandler.assert_called_with(queue_handler_object)
 
     def test__queue_handler_Should_AddResultToResultQueue_When_DecoratedFunctionIsPassedResultQueue(self, *patches):
-        function_mock = Mock()
+        function_mock = Mock(__name__='fn1')
         function_mock.return_value = 'function return value'
         result_queue_mock = Mock()
         result = queue_handler(function_mock)(offset=3, result_queue=result_queue_mock)
@@ -76,7 +76,7 @@ class TestHandler(unittest.TestCase):
         result_queue_mock.put.assert_called_once_with({3: function_mock.return_value})
 
     def test__queue_handler_Should_AddDoneToMessageQueue_When_DecoratedFunctionIsPassedMessageQueueAndCompletes(self, *patches):
-        function_mock = Mock()
+        function_mock = Mock(__name__='fn1')
         function_mock.return_value = 'function return value'
         message_queue_mock = Mock()
         result = queue_handler(function_mock)(offset=3, message_queue=message_queue_mock)
@@ -84,7 +84,7 @@ class TestHandler(unittest.TestCase):
         message_queue_mock.put.assert_called_once_with('#3-DONE')
 
     def test__queue_handler_Should_AddErrorMessagesToMessageQueue_When_FunctionThrowsException(self, *patches):
-        function_mock = Mock()
+        function_mock = Mock(__name__='fn1')
         function_mock.side_effect = Exception('function exception')
         message_queue_mock = Mock()
         queue_handler(function_mock)(offset=3, message_queue=message_queue_mock)
@@ -94,7 +94,7 @@ class TestHandler(unittest.TestCase):
         self.assertEqual(message_queue_mock.put.mock_calls, [call1, call2, call3])
 
     def test__queue_handler_Should_AddExceptionToResultQueue_When_FunctionThrowsException(self, *patches):
-        function_mock = Mock()
+        function_mock = Mock(__name__='fn1')
         function_mock.side_effect = Exception('function exception')
         message_queue_mock = Mock()
         result_queue_mock = Mock()

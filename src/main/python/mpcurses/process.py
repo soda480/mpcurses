@@ -22,6 +22,7 @@ from multiprocessing import Process
 from queue import Queue as SimpleQueue
 from queue import Empty
 from datetime import datetime
+import logging
 
 from .screen import initialize_screen
 from .screen import finalize_screen
@@ -30,9 +31,6 @@ from .screen import blink_running
 from .screen import echo_to_screen
 from .screen import refresh_screen
 from .screen import squash_table
-
-import logging
-from logging import Handler
 
 logger = logging.getLogger(__name__)
 
@@ -132,17 +130,17 @@ def send_process_state(active_processes, process_queue, screen, screen_layout, p
         update_screen('mpcurses: a process has completed', screen, screen_layout)
 
 
-def _execute(screen, function, process_data, shared_data, number_of_processes, init_messages, screen_layout, active_processes, result_queue):
+def _execute(screen, function, process_data_offset, shared_data, number_of_processes, init_messages, screen_layout, active_processes, result_queue):
     """ private execute api
 
-        spawns child processes as dictated by process_data and manages displaying spawned process messages to screen if screen_layout is defined
+        spawns child processes as dictated by process_data_offset and manages displaying spawned process messages to screen if screen_layout is defined
         the called function is defined by the caller and must be wrapped with a queue handler
         the decorator will send all log messages to the message queue to be processed.
 
         Parameters:
             screen (object): wrapped mpcurses
             function (callable): callable object that each spawned process will execute as their target
-            process_data (list): list of tuples containing an offset and dictionary of meta-data specific to spawned process at offset
+            process_data_offset (list): list of tuples containing an offset and dictionary of meta-data specific to spawned process at offset
                 [ (0, {}), (1, {}), (2, {}) ]
             shared_data (dict): data to provide all spawned processes
             number_of_processes (int): number of processes to spawn
@@ -153,18 +151,17 @@ def _execute(screen, function, process_data, shared_data, number_of_processes, i
         Returns:
             None
     """
-    initialize_screen(screen, screen_layout, len(process_data))
+    initialize_screen(screen, screen_layout, len(process_data_offset))
 
     for init_message in init_messages:
         update_screen(init_message, screen, screen_layout)
-    for index, data in enumerate(process_data):
+    for index, data in enumerate(process_data_offset):
         echo_to_screen(screen, data[1], screen_layout, offset=index)
     echo_to_screen(screen, shared_data, screen_layout)
 
-    process_queue = setup_process_queue(process_data)
+    process_queue = setup_process_queue(process_data_offset)
     message_queue = start_processes(function, shared_data, number_of_processes, process_queue, active_processes, result_queue)
 
-    # TODO: figure a better way to send process data
     send_process_state(active_processes, process_queue, screen, screen_layout)
 
     blink_meta = {}
@@ -219,13 +216,15 @@ def terminate_processes(active_processes):
 def update_result(process_data, result_queue):
     """ populate process data with data from result queue
     """
+    logger.debug('populating process data with result from result queue')
     while True:
         try:
             item = result_queue.get(False)
             for offset, result in item.items():
-                logger.debug('adding result of process with offset {}'.format(offset))
+                logger.debug(f'adding result of process with offset {offset} to process data')
                 process_data[int(offset)]['result'] = result
         except Empty:
+            logger.debug('result queue is empty')
             break
 
 

@@ -16,9 +16,8 @@
 import re
 import curses
 from time import time
-
 import logging
-from logging import Handler
+
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +66,7 @@ def create_windows(screen_layout):
 def assign_windows(windows, screen_layout):
     """ assign window to categories in screen layout
     """
-    for category, data in screen_layout.items():
+    for _, data in screen_layout.items():
         window_id = data.get('window_id')
         if window_id:
             data['_window'] = windows[window_id]
@@ -253,8 +252,8 @@ def get_position(text):
         return text.index(':') + 1
     elif text == len(text) * '-':
         return -1
-    else:
-        return len(text) + 1
+
+    return len(text) + 1
 
 
 def process_clear(category, y_pos, x_pos, screen_layout):
@@ -326,9 +325,9 @@ def get_category_count(category, offset, screen_layout):
     if screen_layout[category].get('table'):
         screen_layout[category][offset]['_count'] += 1
         return str(screen_layout[category][offset]['_count']).zfill(zfill)
-    else:
-        screen_layout[category]['_count'] += 1
-        return str(screen_layout[category]['_count']).zfill(zfill)
+
+    screen_layout[category]['_count'] += 1
+    return str(screen_layout[category]['_count']).zfill(zfill)
 
 
 def get_category_x_pos(category, offset, screen_layout):
@@ -461,6 +460,7 @@ def get_table_position(screen_layout):
     for _, data in screen_layout.items():
         if data.get('table'):
             return data['position']
+    return None
 
 
 def get_positions_to_update(screen_layout, table_position, delta):

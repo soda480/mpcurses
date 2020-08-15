@@ -21,18 +21,17 @@ jobs:
       run: pyb install_dependencies
 
     - name: Execute build
-      run: pyb -X
+      run: pyb install
 
     - name: Install Codecov requirements
       run: |
         apk update
         apk add bash curl
+        sed -e 's,filename="mpcurses/,filename="src/main/python/mpcurses/,g' target/reports/coverage.xml > coverage.xml
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
-        file: ./target/reports/coverage.xml
-        directory: ./target/reports
-        flags: unittests
-        fail_ci_if_error: true
+        file: coverage.xml
+

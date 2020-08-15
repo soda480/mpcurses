@@ -21,6 +21,8 @@ logger = logging.getLogger(__name__)
 
 
 class QueueHandler(Handler):
+    """ subclass Handler enabling log messages to be sent to message queue
+    """
 
     def __init__(self, message_queue, offset):
         super(QueueHandler, self).__init__()

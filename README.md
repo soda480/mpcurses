@@ -1,22 +1,25 @@
 [![GitHub Workflow Status](https://github.com/soda480/mpcurses/workflows/build/badge.svg)](https://github.com/soda480/mpcurses/actions)
-[![codecov](https://codecov.io/gh/soda480/mpcurses/branch/master/graph/badge.svg)](https://codecov.io/gh/soda480/mpcurses)
+[![Code Coverage](https://codecov.io/gh/soda480/mpcurses/branch/master/graph/badge.svg)](https://codecov.io/gh/soda480/mpcurses)
+[![Code Quality Score](https://www.code-inspector.com/project/12270/score/svg)](https://frontend.code-inspector.com/project/12270/dashboard)
+[![Code Grade](https://www.code-inspector.com/project/12270/status/svg)](https://frontend.code-inspector.com/project/12270/dashboard)
 [![PyPI version](https://badge.fury.io/py/mpcurses.svg)](https://badge.fury.io/py/mpcurses)
 
 # mpcurses #
-mpcurses is a framework that exposes a simple set of APIs enabling multi-process integration with the curses screen painting library.
+The mpcurses framework enables visualization of function execution. It consists of a simple set of APIs that provide an abstraction for multiprocessing and the curses screen painting library. The main features:
 
-With mpcurses, the complexities of setting up multi-processing within a curses environment are abstracted into a few simple APIs and constructs. The main features:
-
-* Execute a method across one or more concurrent processes
-* Queue method execution to ensure only a predefined number of processes are running
-* Define `curses` screen layout using a Python dict
-* Leverage built-in directives for updating screen dynamically
+* Execute a function across one or more concurrent processes
+* Queue execution to ensure a predefined number of processes are running
+* Visualize function execution using curses screen
+* Define a screen layout using a Python dict
+* Leverage built-in directives for dynamically updating the screen using the executing function log messages
   * Keep numeric counts
   * Update text values
   * Update text colors
   * Maintain visual indicators
   * Update progress bars
-  * Display table of data coming from concurrent proceses
+  * Display tables
+
+ Refer to [How It Works](https://github.com/soda480/mpcurses/wiki/How-It-Works) for additional detail.
 
 
 ### Installation ###
@@ -24,27 +27,18 @@ With mpcurses, the complexities of setting up multi-processing within a curses e
 pip install mpcurses
 ```
 
-### How it works ###
-
-The method you wish to execute concurrently is decorated with the queue handler decorator. The queue handler decorator creates a new log handler that will write all logged messages within the decorated method to a thread-safe queue. The main process creates the thread-safe message queue and handles the spawning of the desired number of concurrent processes, each process will be passed the reference to the message queue upon startup. As the process executes it will send all log messages to the message queue. The main process will then read messages from the message queue as they come in and update the curses screen accordingly. 
-
-![mpcurses](/docs/images/mpcurses.png)
-
-The layout of the curses screen is defined as a dictionary and can leverage builtin constructs for capturing messages, incrementing counters, and processing side effects such as changing text colors when certain messages appear.
-
-The result is a screen that is being updated dynamically from one or more concurrent processes running in the background.
 
 ### Samples ###
 
 | Sample             | Description/Features       |
 |--------------------|----------------------------|
-| samples/sample1.py | prime number counter / single process, screen update, count |
-| samples/sample2.py | network name translator/ single process, screen update, count, visual indicator  |
-| samples/sample3.py | firmware update simulator / multi-process, screen table update, count, visual indicator, process status |
-| samples/sample4.py | prime number counter / multi-process, screen update, count, progress bar |
-| samples/sample5.py | prime number counter / multi-process, no screen |
-| samples/sample6.py | wrap-around table / multi-process, screen table update, process status |
-| samples/colors.py  | displays available colors - most common ones |
+| samples/sample1.py | prime number counter |
+| samples/sample2.py | network name translator |
+| samples/sample3.py | firmware update simulator |
+| samples/sample4.py | prime number counter at scale |
+| samples/sample5.py | prime number counter with no screen |
+| samples/sample6.py | scaled execution showing a wrap-around table |
+| samples/colors.py  | displays common screen colors |
 
 
 #### Running the samples ####
@@ -67,9 +61,9 @@ docker container run \
 mpcurses:latest \
 /bin/sh
 
-python samples/sample1.py
+python samples/sample#.py
 ```
-NOTE: replace sample1.py with any of the samples described above (1-6).
+NOTE: replace # with any of the samples described above (1-6).
 
 ### Development ###
 

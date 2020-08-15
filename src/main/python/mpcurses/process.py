@@ -22,6 +22,7 @@ from multiprocessing import Process
 from queue import Queue as SimpleQueue
 from queue import Empty
 from datetime import datetime
+import logging
 
 from .screen import initialize_screen
 from .screen import finalize_screen
@@ -30,9 +31,6 @@ from .screen import blink_running
 from .screen import echo_to_screen
 from .screen import refresh_screen
 from .screen import squash_table
-
-import logging
-from logging import Handler
 
 logger = logging.getLogger(__name__)
 
@@ -164,7 +162,6 @@ def _execute(screen, function, process_data_offset, shared_data, number_of_proce
     process_queue = setup_process_queue(process_data_offset)
     message_queue = start_processes(function, shared_data, number_of_processes, process_queue, active_processes, result_queue)
 
-    # TODO: figure a better way to send process data
     send_process_state(active_processes, process_queue, screen, screen_layout)
 
     blink_meta = {}

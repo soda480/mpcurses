@@ -20,7 +20,7 @@ def get_hex():
 
 def get_networks():
     networks = []
-    for count in range(0, 150):
+    for count in range(0, 300):
         networks.append(get_hex()[0:16])
     return networks
 
@@ -54,7 +54,7 @@ def get_screen_layout():
         'network': {
             'position': (1, 0),
             'text': 'Processing Network: -',
-            'text_color': 245,
+            'text_color': 7,
             'color': 236,
             'clear': True,
             'regex': '^processing network "(?P<value>.*)"$'
@@ -62,14 +62,14 @@ def get_screen_layout():
         'to_process': {
             'position': (2, 8),
             'text': 'To Process: 0',
-            'text_color': 245,
+            'text_color': 7,
             'color': 15,
             'regex': '^(?P<value>\d+) networks extracted$'
         },
         'translated': {
             'position': (3, 8),
             'text': 'Translated: 0',
-            'text_color': 245,
+            'text_color': 7,
             'color': 2,
             'keep_count': True,
             'regex': '^network ".*" was translated$'
@@ -77,7 +77,7 @@ def get_screen_layout():
         'blacklisted': {
             'position': (4, 7),
             'text': 'BlackListed: 0',
-            'text_color': 245,
+            'text_color': 7,
             'color': 232,
             'keep_count': True,
             'regex': '^network ".*" is blacklisted$'
@@ -85,7 +85,7 @@ def get_screen_layout():
         'not_translated': {
             'position': (5, 4),
             'text': 'Not Translated: 0',
-            'text_color': 245,
+            'text_color': 7,
             'color': 237,
             'keep_count': True,
             'regex': '^network ".*" was not translated$'
@@ -98,9 +98,9 @@ def get_screen_layout():
                 'not_translated'
             ],
             'counter_text': '|',
-            'width': 50,
+            'width': 75,
             # 'modulus': 5,
-            # 'color': 44,
+            # 'color': 7,
             # 'regex': '^(?P<value>\d+) networks extracted$'
         }
     }

@@ -14,13 +14,13 @@
 # limitations under the License.
 
 """
-The mpcurses framework enables visualization of function execution. It consists of a simple set of APIs that provide an abstraction for multiprocessing and the curses screen painting library. The main features:
+The mpcurses provides a framework that enables a function to be executed at scale and its execution to be visualized on screen at runtime. It consists of a simple set of APIs that provide an abstraction for multiprocessing and the curses screen painting library. The main features:
 
 * Execute a function across one or more concurrent processes
 * Queue execution to ensure a predefined number of processes are running
 * Visualize function execution using curses screen
 * Define a screen layout using a Python dict
-* Leverage built-in directives for dynamically updating the screen using the executing function log messages
+* Leverage built-in directives for dynamically updating the screen
   * Keep numeric counts
   * Update text values
   * Update text colors
@@ -28,7 +28,15 @@ The mpcurses framework enables visualization of function execution. It consists 
   * Update progress bars
   * Display tables
 
+The framework can be used on any ordinary Python function. The only requirement for enabling function scale and execution visualization is to ensure the function implements logging and a to provide a screen layout definition. The framework takes care of setting up the multiprocessing, configuring the curses screen and the maintaining the thread-safe queues required for communication.
+
+
 Refer to [How It Works](https://github.com/soda480/mpcurses/wiki/How-It-Works) for additional detail.
+
+
+Refer to [API Reference](https://github.com/soda480/mpcurses/wiki/API-Reference) for description of the API methods and the screen layout directives.
+
+
 For samples checkout our home page: https://github.com/soda480/mpcurses
 """
 
@@ -51,7 +59,7 @@ authors = [
 ]
 summary = 'A framework that exposes a simple set of APIs enabling multi-process integration with the curses screen painting library'
 url = 'https://github.com/soda480/mpcurses'
-version = '0.0.13'
+version = '0.0.14'
 default_task = [
     'clean',
     'analyze',

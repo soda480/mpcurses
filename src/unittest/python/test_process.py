@@ -125,7 +125,7 @@ class TestProcess(unittest.TestCase):
         shared_data = {}
         num_processes = 1
         screen_layout = {}
-        active_processes = {}
+        active_processes = {'1': None, '2': None, '3': None, '4': None}
         messages = ['message1', 'message2']
         result_queue_mock = Mock()
 
@@ -187,6 +187,14 @@ class TestProcess(unittest.TestCase):
         execute(function=function_mock, number_of_processes=1, screen_layout=screen_layout)
         terminate_processes_patch.assert_called_once_with({})
         sys_patch.exit.assert_called_once_with(-1)
+
+    @patch('mpcurses.process.validate_table')
+    @patch('mpcurses.process.wrapper')
+    def test__execute_Should_CallExpected_When_Called(self, wrapper_patch, *patches):
+        function_mock = Mock()
+        screen_layout = Mock()
+        execute(function=function_mock, process_data=[{'set': '1-100'}], shared_data={'k1': 'v1'}, init_messages=['1'], number_of_processes=1, screen_layout=screen_layout)
+        wrapper_patch.assert_called_once()
 
     def test__terminate_processes_Should_CallExpected_When_Called(self, *patches):
         process_mock1 = Mock()
@@ -337,3 +345,27 @@ class TestProcess(unittest.TestCase):
         }
         validate_table(11, screen_layout)
         squash_table_patch.assert_called_once_with(screen_layout, 19)
+
+    @patch('mpcurses.process.squash_table')
+    def test__validate_table_Should_CallExpected_When_SquashFalse(self, squash_table_patch, *patches):
+        screen_layout = {
+            'table': {
+                'rows': 30,
+                'cols': 2,
+                'squash': False
+            }
+        }
+        validate_table(11, screen_layout)
+        squash_table_patch.assert_not_called()
+
+    @patch('mpcurses.process.squash_table')
+    def test__validate_table_Should_CallExpected_When_ProcessesGreaterThanRows(self, squash_table_patch, *patches):
+        screen_layout = {
+            'table': {
+                'rows': 30,
+                'cols': 2,
+                'squash': True
+            }
+        }
+        validate_table(30, screen_layout)
+        squash_table_patch.assert_not_called()

@@ -139,7 +139,8 @@ class TestScreen(unittest.TestCase):
                 'begin_x': 0,
                 'height': 3,
                 'width': 300
-            }
+            },
+            'category1': {}
         }
         result = create_windows(screen_layout)
         expected_result = {
@@ -191,7 +192,7 @@ class TestScreen(unittest.TestCase):
         }
         self.assertEqual(screen_layout, expected_screen_layout)
 
-    def test__initialize_counter_Should_UpdateScreenLayout_When_Called(self, *patches):
+    def test__initialize_counter_Should_UpdateScreenLayout_When_Modulus(self, *patches):
         screen_layout = {
             '_counter_': {
                 'modulus': 5
@@ -212,6 +213,27 @@ class TestScreen(unittest.TestCase):
                 2: {
                     '_count': 0,
                     '_modulus_count': 0
+                }
+            }
+        }
+        self.assertEqual(screen_layout, expected_screen_layout)
+
+    def test__initialize_counter_Should_UpdateScreenLayout_When_NoModulus(self, *patches):
+        screen_layout = {
+            '_counter_': {
+            }
+        }
+        initialize_counter(3, screen_layout)
+        expected_screen_layout = {
+            '_counter_': {
+                0: {
+                    '_count': 0
+                },
+                1: {
+                    '_count': 0
+                },
+                2: {
+                    '_count': 0
                 }
             }
         }
@@ -342,7 +364,7 @@ class TestScreen(unittest.TestCase):
     @patch('mpcurses.screen.curses')
     def test__finalize_screen_ShouldCallExpected_When_ScreenLayoutClearEnd(self, curses_patch, *patches):
         window_mock = Mock()
-        window_mock.getch.return_value = 113
+        window_mock.getch.side_effect = [112, 113]
         screen_layout = {
             'default': {
                 'window': True,
@@ -383,6 +405,8 @@ class TestScreen(unittest.TestCase):
             },
             'start_new_bay': {
                 'regex': '^processing next bay$'
+            },
+            'category1': {
             }
         }
 
@@ -482,6 +506,31 @@ class TestScreen(unittest.TestCase):
         window_mock.addstr.assert_called_once_with(7, 4, '|', color_pair_patch.return_value)
         color_pair_patch.assert_called_once_with(21)
 
+    def test__process_counter_Should_CallExpected_When_CategoryModulusWithRemainder(self, *patches):
+        window_mock = Mock()
+        screen_layout = {
+            'translated': {
+                'color': 31,
+                '_window': window_mock
+            },
+            '_counter_': {
+                'position': (6, 0),
+                'categories': [
+                    'translated',
+                ],
+                'counter_text': '|',
+                'modulus': 5,
+                'color': 21,
+                'regex': '^(?P<value>\\d+) networks extracted$',
+                1: {
+                    '_count': 43,
+                    '_modulus_count': 3
+                },
+            }
+        }
+        process_counter(1, 'translated', 10, screen_layout)
+        window_mock.addstr.assert_not_called()
+
     @patch('mpcurses.screen.curses.color_pair')
     def test__process_counter_Should_CallExpected_When_CategoryNoModulus(self, color_pair_patch, *patches):
         window_mock = Mock()
@@ -554,6 +603,60 @@ class TestScreen(unittest.TestCase):
         window_mock.addstr.assert_called_once_with(6, 54, '|', color_pair_patch.return_value)
         color_pair_patch.assert_called_once_with(31)
         self.assertEqual(screen_layout['_counter_']['position'], (7, 10))
+
+    @patch('mpcurses.screen.curses.color_pair')
+    def test__process_counter_Should_CallExpected_When_WidthWithRemainder(self, color_pair_patch, *patches):
+        window_mock = Mock()
+        screen_layout = {
+            'translated': {
+                'color': 31,
+                '_window': window_mock
+            },
+            '_counter_': {
+                'position': (6, 10),
+                'categories': [
+                    'translated',
+                ],
+                'counter_text': '|',
+                'width': 5,
+                0: {
+                    '_count': 43,
+                },
+            }
+        }
+        process_counter(0, 'translated', 10, screen_layout)
+        window_mock.addstr.assert_called_once_with(6, 53, '|', color_pair_patch.return_value)
+        color_pair_patch.assert_called_once_with(31)
+        self.assertEqual(screen_layout['_counter_']['position'], (6, 10))
+        self.assertEqual(screen_layout['_counter_'][0]['_count'], 44)
+
+    def test__process_counter_Should_CallExpected_When_NoCategoryNoCounter(self, *patches):
+        window_mock = Mock()
+        screen_layout = {
+            'translated': {
+                'color': 31,
+                '_window': window_mock
+            },
+            '_counter_': {
+                'position': (6, 0),
+                'categories': [
+                    'translated',
+                ],
+                'counter_text': '|',
+                'modulus': 5,
+                'color': 21,
+                'regex': '^(?P<value>\\d+) networks extracted$',
+                1: {
+                    '_count': 44,
+                    '_modulus_count': 3
+                },
+            },
+            'category1': {
+                '_window': window_mock
+            }
+        }
+        process_counter(1, 'category1', 10, screen_layout)
+        window_mock.addstr.assert_not_called()
 
     def test__get_category_color_Should_ReturnExpected_When_EffectMatch(self, *patches):
         screen_layout = {
@@ -650,15 +753,20 @@ class TestScreen(unittest.TestCase):
         expected_result = 92
         self.assertEqual(result, expected_result)
 
-    def test__get_category_y_pos_Should_ReturnExpected_When_TableNoWraparound(self, *patches):
+    def test__get_category_x_pos_Should_ReturnExpected_When_TableNoWraparound(self, *patches):
         screen_layout = {
+            'table': {
+                'rows': 3,
+                'width': 40,
+                'cols': 3
+            },
             'start': {
                 'position': (5, 12),
                 'table': True
             }
         }
-        result = get_category_y_pos('start', 4, screen_layout)
-        expected_result = 9
+        result = get_category_x_pos('start', 2, screen_layout)
+        expected_result = 12
         self.assertEqual(result, expected_result)
 
     def test__get_category_y_pos_Should_ReturnExpected_When_NoTable(self, *patches):
@@ -685,6 +793,22 @@ class TestScreen(unittest.TestCase):
         }
         result = get_category_y_pos('start', 7, screen_layout)
         expected_result = 6
+        self.assertEqual(result, expected_result)
+
+    def test__get_category_y_pos_Should_ReturnExpected_When_TableNoWraparound(self, *patches):
+        screen_layout = {
+            'table': {
+                'rows': 3,
+                'width': 40,
+                'cols': 3
+            },
+            'start': {
+                'position': (5, 12),
+                'table': True
+            }
+        }
+        result = get_category_y_pos('start', 2, screen_layout)
+        expected_result = 7
         self.assertEqual(result, expected_result)
 
     @patch('mpcurses.screen.sanitize_message')
@@ -898,7 +1022,11 @@ class TestScreen(unittest.TestCase):
     @patch('mpcurses.screen.time')
     @patch('mpcurses.screen.curses')
     def test__blink_running_Should_SetBlinkMeta_When_BlinkMetaNone(self, curses_patch, time_patch, *patches):
-        time_patch.return_value = 1517465188.000001
+        time_patch.side_effect = [
+            .5,
+            .5,
+            1
+        ]
         blink_meta = {
         }
 
@@ -907,8 +1035,24 @@ class TestScreen(unittest.TestCase):
 
         screen_mock.addstr.assert_called_once_with(0, 0, ' RUNNING ', curses_patch.color_pair(12))
         self.assertTrue(blink_meta['blink_on'])
-        self.assertEqual(blink_meta['blink_on_time'], time_patch.return_value)
-        self.assertEqual(blink_meta['blink_off_time'], time_patch.return_value)
+        self.assertEqual(blink_meta['blink_on_time'], .5)
+        self.assertEqual(blink_meta['blink_off_time'], .5)
+
+    @patch('mpcurses.screen.time')
+    @patch('mpcurses.screen.curses')
+    def test__blink_running_Should_BlinkOff_When_BlinkOnAndTimeDeltaNotMet(self, curses_patch, time_patch, *patches):
+        time_patch.return_value = 1517465187.100000
+        blink_meta = {
+            'blink_on_time': 1517465187.000000,
+            'blink_off_time': 1517465188.000000,
+            'blink_on': True
+        }
+
+        screen_mock = Mock()
+        blink_running(screen_mock, blink_meta)
+
+        self.assertTrue(blink_meta['blink_on'])
+        self.assertEqual(blink_meta['blink_off_time'], 1517465188.000000)
 
     def test__sanitize_message_Should_ReturnExepcted_When_NoMatchForProcessNumber(self, *patches):
         message = 'INFO: this is an informational log message'
@@ -996,6 +1140,24 @@ class TestScreen(unittest.TestCase):
         result = get_table_position(screen_layout)
         expected_result = (3, 3)
         self.assertEqual(result, expected_result)
+
+    def test__get_table_position_Should_ReturnExpected_When_NoTable(self, *patches):
+        screen_layout = {
+            'category1': {
+                'position': (2, 2)
+            },
+            'category2': {
+                'position': (2, 10)
+            },
+            'category3': {
+                'position': (3, 3)
+            },
+            'category4': {
+                'position': (21, 14)
+            }
+        }
+        result = get_table_position(screen_layout)
+        self.assertIsNone(result)
 
     def test__get_positions_to_update_Should_ReturnExpected_When_Called(self, *patches):
         screen_layout = {

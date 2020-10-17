@@ -38,8 +38,16 @@ Execute a function that counts the prime numbers between 1 and 10K. The screen k
 ![sample1](/docs/images/sample1.gif)
 
 #### [sample2](/samples/sample2.py)
-Execute a function that translates the name of a list of networks. The screen keeps track of the number of networks that have been translated, blacklisted and not translated. It also maintains a visual of the aforementioned indicators.
+Execute a function that processes a list of items. The screen keeps track of the number of items that have been processed successfully, with warnings and with errors. It also maintains a visual of the aforementioned indicators.
 ![sample2](/docs/images/sample2.gif)
+
+#### [sample2a](/samples/sample2a.py)
+Same as sample2 above, except now two lists are maintained showing the items with errors and warnings respectively.
+![sample2a](/docs/images/sample2a.gif)
+
+#### [sample2b](/samples/sample2b.py)
+Same as sample2 above, but now the function that processes a list of items is scaled out across three background processes (called groups). The screen maintains indicators for each group including lists of items that had errors/warnings for each background process.
+![sample2b](/docs/images/sample2b.gif)
 
 #### [sample3](/samples/sample3.py)
 Execute a function that upgrades server firmware on a rack consisting of a set of servers. The upgrade consists of several tasks, the screen keeps track of the current task being executed and its status. The execution is scaled and runs concurrently on three servers at a time.

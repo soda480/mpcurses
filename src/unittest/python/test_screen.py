@@ -329,6 +329,26 @@ class TestScreen(unittest.TestCase):
     @patch('mpcurses.screen.create_windows')
     @patch('mpcurses.screen.curses.curs_set')
     @patch('mpcurses.screen.initialize_colors')
+    @patch('mpcurses.screen.curses.color_pair')
+    @patch('mpcurses.screen.initialize_keep_count')
+    @patch('mpcurses.screen.initialize_counter')
+    def test__initialize_screen_Should_AddKeepCount_When_List(self, *patches):
+        screen_layout = {
+            'items': {
+                'position': (1, 1),
+                'list': True,
+                'color': 1,
+                'regex': r'^error processing item "(?P<value>.*)"$'
+            }
+        }
+        screen_mock = Mock()
+        initialize_screen(screen_mock, screen_layout, 1)
+        self.assertTrue(screen_layout['items']['keep_count'])
+
+    @patch('mpcurses.screen.assign_windows')
+    @patch('mpcurses.screen.create_windows')
+    @patch('mpcurses.screen.curses.curs_set')
+    @patch('mpcurses.screen.initialize_colors')
     def test__initialize_screen_Should_CallScreenRefresh_When_Called(self, *patches):
         screen_mock = Mock()
         initialize_screen(screen_mock, {}, 1)
@@ -476,6 +496,24 @@ class TestScreen(unittest.TestCase):
         result = get_category_values(message, 0, screen_layout)
         expected_result = [
             ('message', '=>'),
+        ]
+        self.assertEqual(result, expected_result)
+
+    @patch('mpcurses.screen.get_category_count', return_value='012')
+    def test__get_category_values_Should_ReturnExpected_When_List(self, *patches):
+        screen_layout = {
+            'items': {
+                'position': (6, 35),
+                'list': True,
+                'keep_count': True,
+                'color': 1,
+                'regex': r'^processing item "(?P<value>.*)"$'
+            }
+        }
+        message = 'processing item "cambridge-limited"'
+        result = get_category_values(message, 0, screen_layout)
+        expected_result = [
+            ('items', 'cambridge-limited'),
         ]
         self.assertEqual(result, expected_result)
 
@@ -810,6 +848,21 @@ class TestScreen(unittest.TestCase):
         result = get_category_y_pos('start', 2, screen_layout)
         expected_result = 7
         self.assertEqual(result, expected_result)
+
+    def test__get_category_y_pos_Should_ReturnExpected_When_List(self, *patches):
+        screen_layout = {
+            'items': {
+                'position': (6, 35),
+                'list': True,
+                'color': 1,
+                'regex': r'^processing item "(?P<value>.*)"$',
+                '_count': 12
+            }
+        }
+        result = get_category_y_pos('items', 0, screen_layout)
+        expected_result = 18
+        self.assertEqual(result, expected_result)
+
 
     @patch('mpcurses.screen.sanitize_message')
     def test__update_screen_Should_Return_When_NoScreen(self, sanitize_message_patch, *patches):

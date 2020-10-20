@@ -26,7 +26,7 @@ def process_items():
     for item in items:
         logger.debug(f'processing item "{item}"')
         # simulate work being done
-        sleep(random.choice([0.015]))
+        sleep(random.choice([0.005]))
         if item.count('e') > 4:
             # simulate warning
             logger.debug(f'warning processing item "{item}"')
@@ -73,7 +73,7 @@ def get_screen_layout():
             'position': (3, 6),
             'text': 'Warnings: -',
             'text_color': 0,
-            'color': 3, # 232,
+            'color': 3,
             'keep_count': True,
             'regex': r'^warning processing item ".*"$'
         },
@@ -81,7 +81,7 @@ def get_screen_layout():
             'position': (4, 8),
             'text': 'Errors: -',
             'text_color': 0,
-            'color': 1, # 237,
+            'color': 1,
             'keep_count': True,
             'regex': r'^error processing item ".*"$'
         },
@@ -99,19 +99,29 @@ def get_screen_layout():
             'clear': True,
             'regex': r'^processing complete$'
         },
-        '_counter_': {
-            'position': (6, 0),
-            'categories': [
-                'processed',
-                'warnings',
-                'errors'
-            ],
-            'counter_text': '|',
-            'width': 100,
-            # 'modulus': 5,
-            # 'color': 7,
-            # 'regex': '^(?P<value>\d+) networks extracted$'
+        'items_warning_header': {
+            'position': (6, 2),
+            'text': 'Items w/Warnings',
+            'text_color': 0
+        },
+        'items_error_header': {
+            'position': (6, 35),
+            'text': 'Items w/Errors',
+            'text_color': 0
+        },
+        'items_with_warnings': {
+            'position': (6, 2),
+            'list': True,
+            'color': 3,
+            'regex': r'^warning processing item "(?P<value>.*)"$'
+        },
+        'items_with_errors': {
+            'position': (6, 35),
+            'list': True,
+            'color': 1,
+            'regex': r'^error processing item "(?P<value>.*)"$'
         }
+
     }
 
 

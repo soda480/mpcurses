@@ -31,12 +31,12 @@ def initialize_colors():
         curses.init_pair(index, index, -1)
     curses.init_pair(232, 16, 226)  # black/yellow
     curses.init_pair(233, 15, 136)  # white/brown
-    curses.init_pair(234, 16, 51)  # black/cyan
-    curses.init_pair(235, 15, 19)  # white/blue
+    curses.init_pair(234, 16, 51)   # black/cyan
+    curses.init_pair(235, 15, 19)   # white/blue
     curses.init_pair(236, 15, 240)  # white/grey
     curses.init_pair(237, 15, 160)  # white/red
-    curses.init_pair(238, 16, 15)  # black/white
-    curses.init_pair(239, 15, 23)  # white/green
+    curses.init_pair(238, 16, 15)   # black/white
+    curses.init_pair(239, 15, 23)   # white/green
 
 
 def create_default_window(screen_layout):
@@ -165,6 +165,9 @@ def initialize_screen(screen, screen_layout, offsets):
             initialize_counter(offsets, screen_layout)
         if data.get('text'):
             initialize_text(offsets, category, screen_layout)
+        if data.get('list') and not data.get('keep_count'):
+            # list requires keep_count to be set
+            data['keep_count'] = True
         if data.get('keep_count'):
             initialize_keep_count(category, offsets, screen_layout)
 
@@ -222,11 +225,15 @@ def get_category_values(message, offset, screen_layout):
                         spaces = ' ' * (width - length)
                         value = f'{spaces}{value}'
 
+                original_value = value
                 if screen_layout[category].get('keep_count'):
                     value = get_category_count(category, offset, screen_layout)
 
                 if screen_layout[category].get('replace_text'):
                     value = screen_layout[category]['replace_text']
+
+                if screen_layout[category].get('list'):
+                    value = original_value
 
                 category_values.append((category, value))
 
@@ -350,6 +357,8 @@ def get_category_y_pos(category, offset, screen_layout):
     """ return y pos for category in screen layout
     """
     y_pos = screen_layout[category]['position'][0]
+    # table and list are mutually exclusive - can't be set at the same time for a given category
+    # list must include keep_count
     if screen_layout[category].get('table'):
         y_pos += offset
         if screen_layout.get('table'):
@@ -357,6 +366,8 @@ def get_category_y_pos(category, offset, screen_layout):
             if offset >= rows:
                 y_pos -= int(offset / rows) * rows
                 # logger.debug(f'table offset {offset} y_pos is {y_pos}')
+    elif screen_layout[category].get('list'):
+        y_pos += screen_layout[category]['_count']
     return y_pos
 
 

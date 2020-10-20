@@ -38,22 +38,22 @@ def get_screen_layout():
         'number_header': {
             'position': (2, 4),
             'text': 'Number',
-            'text_color': 15,
+            'text_color': 14,
         },
         'prime_header': {
             'position': (2, 15),
             'text': 'Prime :',
-            'text_color': 15,
+            'text_color': 14,
         },
         'not_prime_header1': {
             'position': (1, 22),
             'text': 'Not',
-            'text_color': 15,
+            'text_color': 14,
         },
         'not_prime_header2': {
             'position': (2, 21),
             'text': 'Prime',
-            'text_color': 15,
+            'text_color': 14,
         },
         'number': {
             'position': (3, 1),
@@ -65,7 +65,7 @@ def get_screen_layout():
         'uppper_number': {
             'position': (3, 7),
             'text': '',
-            'color': 242,
+            'color': 15,
             'regex': '^checking \d+(?P<value>/\d+)$',
             'table': True
         },
@@ -94,14 +94,14 @@ def get_screen_layout():
             ],
             'counter_text': '|',
             'modulus': 200,
-            'color': 242,
+            'color': 15,
             # 'regex': '^total of (?P<value>\d+) numbers$',
             'table': True
         },
         'total_header': {
             'position': (14, 8),
             'text': 'Total:',
-            'text_color': 236,
+            'text_color': 14,
         },
         'prime_total': {
             'position': (14, 15),

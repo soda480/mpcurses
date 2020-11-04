@@ -16,3 +16,4 @@
 
 from .handler import queue_handler
 from .process import execute
+from .mpcurses import MPcurses

@@ -150,9 +150,6 @@ def initialize_keep_count(category, offsets, screen_layout):
 def initialize_screen(screen, screen_layout, offsets):
     """ initialize screen
     """
-    if not screen:
-        return
-
     logger.debug('initializing screen')
     initialize_colors()
     curses.curs_set(0)
@@ -178,9 +175,6 @@ def initialize_screen(screen, screen_layout, offsets):
 def finalize_screen(screen, screen_layout):
     """ finalize screen
     """
-    if not screen:
-        return
-
     window = screen_layout['default']['_window']
 
     window.move(0, 0)
@@ -378,9 +372,6 @@ def update_screen(message, screen, screen_layout):
         iterates through the matching categories and executes display as dictated by
         the category
     """
-    if not screen:
-        return
-
     offset, sanitized_message = sanitize_message(message)
     category_values = get_category_values(sanitized_message, offset, screen_layout)
 
@@ -410,9 +401,6 @@ def blink_running(screen, blink_meta):
         this was implemented to provide a message that continuously blinks a message
         on the screen to indicate that the program is still working
     """
-    if not screen:
-        return
-
     if not blink_meta:
         blink_meta['blink_on_time'] = time()
         blink_meta['blink_off_time'] = time()
@@ -438,9 +426,6 @@ def blink_running(screen, blink_meta):
 def echo_to_screen(screen, data, screen_layout, offset=None):
     """ iterate over items in data dict update screen with echo messages in shared data
     """
-    if not screen:
-        return
-
     for key, value in data.items():
         message = ''
         if isinstance(value, (int, float, str, bool)):
@@ -459,9 +444,6 @@ def echo_to_screen(screen, data, screen_layout, offset=None):
 def refresh_screen(screen):
     """ refresh screen
     """
-    if not screen:
-        return
-
     screen.refresh()
 
 
@@ -500,3 +482,18 @@ def squash_table(screen_layout, delta):
     positions = get_positions_to_update(screen_layout, table_position[0], delta)
     logger.debug(f'the following positions will be updated:\n{positions}')
     update_positions(screen_layout, positions)
+
+
+def validate_screen_layout(processes, screen_layout):
+    """ validate screen layout
+    """
+    table = screen_layout.get('table')
+    if not table:
+        return
+    entries = table.get('rows', 0) * table.get('cols', 0)
+    if processes > entries:
+        raise Exception(f'table definition of {entries} entries not sufficient for {processes} processes')
+    if table.get('squash'):
+        rows = table.get('rows', 0)
+        if processes < rows:
+            squash_table(screen_layout, rows - processes)

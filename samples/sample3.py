@@ -1,7 +1,7 @@
 # Sample - Server Bay Firmware Update
 
 from mpcurses import queue_handler
-from mpcurses import execute
+from mpcurses import MPcurses
 
 from datetime import datetime
 from time import sleep
@@ -368,11 +368,11 @@ def main():
     """
     bays = range(1,17)
     process_data = get_servers(bays)
-    execute(
+    MPcurses(
         function=update_firmware,
         process_data=process_data,
-        number_of_processes=5,
-        screen_layout=get_screen_layout())
+        processes_to_start=5,
+        screen_layout=get_screen_layout()).execute()
 
     if any([process['result'] for process in process_data]):
         sys.exit(-1)

@@ -7,7 +7,7 @@ import logging
 from time import sleep
 
 from mpcurses import queue_handler
-from mpcurses import execute
+from mpcurses import MPcurses
 
 
 logger = logging.getLogger(__name__)
@@ -216,15 +216,15 @@ def get_screen_layout():
 
 
 def main():
-    execute(
+    MPcurses(
         function=process_worker,
         process_data=[
             {'group': '01'},
             {'group': '02'},
             {'group': '03'}
         ],
-        number_of_processes=3,
-        screen_layout=get_screen_layout())
+        processes_to_start=3,
+        screen_layout=get_screen_layout()).execute()
 
 
 if __name__ == '__main__':

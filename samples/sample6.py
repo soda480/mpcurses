@@ -1,7 +1,7 @@
 # Sample - Wrap-around Table
 
 from mpcurses import queue_handler
-from mpcurses import execute
+from mpcurses import MPcurses
 
 import os
 import random
@@ -177,13 +177,13 @@ def configure_logging():
 def main():
     configure_logging()
     items = get_items(random.randint(1, 60))
-    execute(
+    MPcurses(
         function=process_item,
         process_data=[
             {'item': item} for item in items
         ],
-        number_of_processes=25,
-        screen_layout=get_screen_layout())
+        processes_to_start=25,
+        screen_layout=get_screen_layout()).execute()
 
 
 if __name__ == '__main__':

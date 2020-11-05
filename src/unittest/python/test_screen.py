@@ -44,6 +44,7 @@ from mpcurses.screen import get_table_position
 from mpcurses.screen import get_positions_to_update
 from mpcurses.screen import update_positions
 from mpcurses.screen import squash_table
+from mpcurses.screen import validate_screen_layout
 
 import sys
 import logging
@@ -275,11 +276,6 @@ class TestScreen(unittest.TestCase):
         }
         self.assertEqual(screen_layout, expected_screen_layout)
 
-    @patch('mpcurses.screen.initialize_colors')
-    def test__initialize_screen_Should_Return_When_NoScreen(self, initialize_colors_patch, *patches):
-        initialize_screen(None, {}, 3)
-        initialize_colors_patch.assert_not_called()
-
     @patch('mpcurses.screen.assign_windows')
     @patch('mpcurses.screen.create_windows')
     @patch('mpcurses.screen.curses.curs_set')
@@ -369,16 +365,6 @@ class TestScreen(unittest.TestCase):
         initialize_screen(screen_mock, {}, 1)
         window1_mock.refresh.assert_called_once_with()
         window2_mock.refresh.assert_called_once_with()
-
-    def test__finialize_screen_Should_Return_When_NoScreen(self, *patches):
-        window_mock = Mock()
-        screen_layout = {
-            'default': {
-                '_window': window_mock
-            }
-        }
-        finalize_screen(None, screen_layout)
-        window_mock.move.assert_not_called()
 
     @patch('mpcurses.screen.initialize_colors')
     @patch('mpcurses.screen.curses')
@@ -863,12 +849,6 @@ class TestScreen(unittest.TestCase):
         expected_result = 18
         self.assertEqual(result, expected_result)
 
-
-    @patch('mpcurses.screen.sanitize_message')
-    def test__update_screen_Should_Return_When_NoScreen(self, sanitize_message_patch, *patches):
-        update_screen('message', None, {})
-        sanitize_message_patch.assert_not_called()
-
     @patch('mpcurses.screen.get_category_values', return_value=None)
     @patch('mpcurses.screen.sanitize_message', return_value=(None, None))
     @patch('mpcurses.screen.logger')
@@ -1018,11 +998,6 @@ class TestScreen(unittest.TestCase):
         process_counter_patch.assert_called_once_with(3, 'translated', '033', screen_layout)
 
     @patch('mpcurses.screen.time')
-    def test__blink_running_Should_Return_When_NoScreen(self, time_patch, *patches):
-        blink_running(None, {})
-        time_patch.assert_not_called()
-
-    @patch('mpcurses.screen.time')
     @patch('mpcurses.screen.curses')
     def test__blink_running_Should_BlinkOff_When_BlinkOnAndTimeDeltaMet(self, curses_patch, time_patch, *patches):
         time_patch.return_value = 1517465190.000000
@@ -1147,8 +1122,20 @@ class TestScreen(unittest.TestCase):
         self.assertTrue(call("'key6' has 3 items", screen_mock, screen_layout_mock) in update_screen_patch.mock_calls)
         self.assertTrue(call("'key7' has 4 items", screen_mock, screen_layout_mock) in update_screen_patch.mock_calls)
 
-    def test__refresh_screen_Should_NotCallScreenRefresh_When_ScreenIsNone(self, *patches):
-        self.assertIsNone(refresh_screen(None))
+    @patch('mpcurses.screen.update_screen')
+    def test__echo_to_screen_Should_CallExpected_When_Offset(self, update_screen_patch, *patches):
+        screen_mock = Mock()
+        screen_layout_mock = Mock()
+        data = {
+            'key1': True
+        }
+        echo_to_screen(screen_mock, data, screen_layout_mock, offset='1')
+        self.assertTrue(call("#1-'key1' is 'True'", screen_mock, screen_layout_mock) in update_screen_patch.mock_calls)
+
+    def test__refresh_screen_Should_CallScreenRefresh_When_Screen(self, *patches):
+        screen_mock = Mock()
+        refresh_screen(screen_mock)
+        screen_mock.refresh.assert_called_once_with()
 
     def test__get_position_Should_ReturnExpected_When_Semicolon(self, *patches):
         self.assertEqual(get_position('data: 0'), 5)
@@ -1272,3 +1259,57 @@ class TestScreen(unittest.TestCase):
         screen_layout = {}
         squash_table(screen_layout, 10)
         update_positions_patch.assert_called_once_with(screen_layout, get_positions_to_update_patch.return_value)
+
+    def test__validate_screen_layout_RaiseException_When_MoreProcessesThanTableEntries(self, *patches):
+        screen_layout = {
+            'table': {
+                'rows': 30,
+                'cols': 2
+            }
+        }
+        with self.assertRaises(Exception):
+            validate_screen_layout(100, screen_layout)
+
+    @patch('mpcurses.screen.squash_table')
+    def test__validate_screen_layout_Should_CallExpected_When_Squash(self, squash_table_patch, *patches):
+        screen_layout = {
+            'table': {
+                'rows': 30,
+                'cols': 2,
+                'squash': True
+            }
+        }
+        validate_screen_layout(11, screen_layout)
+        squash_table_patch.assert_called_once_with(screen_layout, 19)
+
+    @patch('mpcurses.screen.squash_table')
+    def test__validate_screen_layout_Should_CallExpected_When_SquashFalse(self, squash_table_patch, *patches):
+        screen_layout = {
+            'table': {
+                'rows': 30,
+                'cols': 2,
+                'squash': False
+            }
+        }
+        validate_screen_layout(11, screen_layout)
+        squash_table_patch.assert_not_called()
+
+    @patch('mpcurses.screen.squash_table')
+    def test__validate_screen_layout_Should_CallExpected_When_ProcessesGreaterThanRows(self, squash_table_patch, *patches):
+        screen_layout = {
+            'table': {
+                'rows': 30,
+                'cols': 2,
+                'squash': True
+            }
+        }
+        validate_screen_layout(30, screen_layout)
+        squash_table_patch.assert_not_called()
+
+    @patch('mpcurses.screen.squash_table')
+    def test__validate_screen_layout_Should_CallExpected_When_NoTable(self, squash_table_patch, *patches):
+        screen_layout = {
+        }
+        validate_screen_layout(30, screen_layout)
+        squash_table_patch.assert_not_called()
+        squash_table_patch.assert_not_called()

@@ -1,7 +1,7 @@
 # Sample - Prime Number Counter
 
 from mpcurses import queue_handler
-from mpcurses import execute
+from mpcurses import MPcurses
 
 from time import sleep
 import logging
@@ -69,13 +69,13 @@ def get_screen_map():
 
 
 def main():
-    execute(
+    MPcurses(
         function=check_primes,
         process_data=[
             {'range': '1-10000'}
         ],
-        number_of_processes=1,
-        screen_layout=get_screen_map())
+        processes_to_start=1,
+        screen_layout=get_screen_map()).execute()
 
 
 if __name__ == '__main__':

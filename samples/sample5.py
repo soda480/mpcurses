@@ -1,12 +1,20 @@
 # Sample - Prime Number Counter
 
-from mpcurses import queue_handler
-from mpcurses import execute
-from queue import Empty
-
-from time import sleep
+import sys
 import logging
+from mpcurses import queue_handler
+from mpcurses import MPcurses
+
 logger = logging.getLogger(__name__)
+
+root = logging.getLogger()
+root.setLevel(logging.DEBUG)
+
+handler = logging.StreamHandler(sys.stdout)
+handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter("%(asctime)s %(processName)s %(name)s [%(funcName)s] - %(message)s")
+handler.setFormatter(formatter)
+root.addHandler(handler)
 
 
 def is_prime(num):
@@ -26,14 +34,10 @@ def check_primes(data, shared_data):
     range_split = data['range'].split('-')
     lower = int(range_split[0])
     upper = int(range_split[1]) + 1
-    logger.debug('total of {} numbers'.format(upper - lower))
+    logger.info(f"finding prime numbers in range {data['range']}")
     for number in range(lower, upper):
-        logger.debug('checking {}/{}'.format(str(number).zfill(6), str(range_split[1]).zfill(6)))
         if is_prime(number):
-            logger.debug('prime')
             primes.append(number)
-        else:
-            logger.debug('not prime')
     return primes
 
 
@@ -43,16 +47,14 @@ def main():
         {'range': '10001-20000'},
         {'range': '20001-30000'}
     ]
-    print('running...')
-    execute(
+    MPcurses(
         function=check_primes,
         process_data=process_data,
-        number_of_processes=3)
+        processes_to_start=len(process_data)).execute()
 
     for process in process_data:
-        print('{}: has {} primes'.format(
-            process['range'], len(process['result'])))
+        print(f"the range {process['range']} has {len(process['result'])} primes")
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  
     main()

@@ -23,6 +23,7 @@ from queue import Empty
 
 from mpcurses.mpcurses import MPcurses
 from mpcurses.mpcurses import NoActiveProcesses
+from mpcurses.mpcurses import OnDict
 
 import sys
 import logging
@@ -83,9 +84,8 @@ class TestMPcurses(unittest.TestCase):
         client.start_processes()
         self.assertEqual(len(start_next_process_patch.mock_calls), 0)
 
-    @patch('mpcurses.MPcurses.on_state_change')
     @patch('mpcurses.mpcurses.Process')
-    def test__start_next_process_Should_CallExpected_When_Called(self, process_patch, on_state_change_patch, *patches):
+    def test__start_next_process_Should_CallExpected_When_Called(self, process_patch, *patches):
         process_mock = Mock()
         process_patch.return_value = process_mock
 
@@ -102,7 +102,6 @@ class TestMPcurses(unittest.TestCase):
                 'offset': 0,
                 'result_queue': client.result_queue
             })
-        on_state_change_patch.assert_called_once_with(process_completed=False)
 
     def test__terminate_processes_Should_CallExpected_When_Called(self, *patches):
         function_mock = Mock()
@@ -124,8 +123,7 @@ class TestMPcurses(unittest.TestCase):
         self.assertTrue(client.process_queue.empty())        
 
     @patch('mpcurses.mpcurses.logger')
-    @patch('mpcurses.MPcurses.on_state_change')
-    def test__remove_active_process_Should_CallExpected_When_Called(self, on_state_change_patch, logger_patch, *patches):
+    def test__remove_active_process_Should_CallExpected_When_Called(self, logger_patch, *patches):
         function_mock = Mock()
         process_data = [{'range': '0-1'}, {'range': '2-3'}, {'range': '4-5'}]
         client = MPcurses(function=function_mock, process_data=process_data)
@@ -133,7 +131,6 @@ class TestMPcurses(unittest.TestCase):
         client.active_processes['0'] = process_mock
         client.remove_active_process('0')   
         logger_patch.info.assert_called_once_with('process at offset 0 process id 121372 has completed')
-        on_state_change_patch.assert_called_once_with(process_completed=True)
 
     def test__update_result_Should_CallExpected_When_Called(self, *patches):
         result_queue_mock = Mock()
@@ -416,3 +413,51 @@ class TestMPcurses(unittest.TestCase):
         client.execute()
         run_patch.assert_called_once_with()
         update_result_patch.assert_called_once_with()
+
+
+class TestOnDict(unittest.TestCase):
+
+    def setUp(self):
+        """
+        """
+        pass
+
+    def tearDown(self):
+        """
+        """
+        pass
+
+    def test__init_Should_SetOnChange_When_Called(self, *patches):
+        on_change_mock = Mock()
+        onDict = OnDict(on_change=on_change_mock)
+        self.assertEqual(onDict.on_change, on_change_mock)
+
+    def test__init_Should_RaiseValueError_When_OnChangeNotSpecified(self, *patches):
+        with self.assertRaises(ValueError):
+            OnDict()
+
+    def test__setitem_Should_CallOnChange_When_Called(self, *patches):
+        on_change_mock = Mock()
+        onDict = OnDict(on_change=on_change_mock)
+        onDict['key1'] = 'value1'
+        on_change_mock.assert_called_once_with(False)
+
+    def test__deltitem_Should_CallOnChange_When_Called(self, *patches):
+        on_change_mock = Mock()
+        onDict = OnDict(on_change=on_change_mock)
+        onDict['key1'] = 'value1'
+        del onDict['key1']
+        self.assertTrue(call(True) in on_change_mock.mock_calls)
+
+    def test__pop_Should_CallOnChange_When_Called(self, *patches):
+        on_change_mock = Mock()
+        onDict = OnDict(on_change=on_change_mock)
+        onDict['key1'] = 'value1'
+        onDict.pop('key1', None)
+        self.assertTrue(call(True) in on_change_mock.mock_calls)
+
+    def test__pop_Should_NotCallOnChange_When_NoValue(self, *patches):
+        on_change_mock = Mock()
+        onDict = OnDict(on_change=on_change_mock)
+        onDict.pop('key1', None)
+        on_change_mock.assert_not_called()

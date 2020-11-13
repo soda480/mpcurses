@@ -40,10 +40,41 @@ class NoActiveProcesses(Exception):
     pass
 
 
+class OnDict(dict):
+    """ subclass dict to execute method when items are added or removed changes
+    """
+    def __init__(self, on_change=None):
+        """ override constructor
+        """
+        if on_change is None:
+            raise ValueError('on_change method must be specified')
+        super(OnDict, self).__init__()
+        self.on_change = on_change
+
+    def __setitem__(self, *args):
+        """ override setitem
+        """
+        super(OnDict, self).__setitem__(*args)
+        self.on_change(False)
+
+    def __delitem__(self, *args):
+        """ override delitem
+        """
+        super(OnDict, self).__delitem__(*args)
+        self.on_change(True)
+
+    def pop(self, *args):
+        """ override pop
+        """
+        value = super(OnDict, self).pop(*args)
+        if value is not None:
+            self.on_change(True)
+        return value
+
+
 class MPcurses():
     """ mpcurses process pool
     """
-
     def __init__(self, function, *, process_data=None, shared_data=None, processes_to_start=None, screen_layout=None, init_messages=None, setup_process_queue=True):
         """ MPCstate constructor
         """
@@ -61,7 +92,7 @@ class MPcurses():
             processes_to_start = len(process_data)
         self.processes_to_start = processes_to_start
 
-        self.active_processes = {}
+        self.active_processes = OnDict(on_change=self.on_state_change)
 
         self.process_data_offset = [(self.process_data.index(item), item) for item in self.process_data]
 
@@ -123,9 +154,6 @@ class MPcurses():
         # update active_processes dictionary with process meta-data for the process offset
         self.active_processes[str(offset)] = process
 
-        # consider better way of implementing on_state_change
-        self.on_state_change(process_completed=False)
-
     def terminate_processes(self):
         """ terminate all active processes
         """
@@ -146,9 +174,6 @@ class MPcurses():
         process = self.active_processes.pop(offset, None)
         process_id = process.pid if process else '-'
         logger.info(f'process at offset {offset} process id {process_id} has completed')
-
-        # consider better way of implementing on_state_change
-        self.on_state_change(process_completed=True)
 
     def update_result(self):
         """ update process data with result

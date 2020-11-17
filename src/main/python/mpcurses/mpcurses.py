@@ -30,6 +30,7 @@ from .screen import blink_running
 from .screen import echo_to_screen
 from .screen import refresh_screen
 from .screen import validate_screen_layout
+from .handler import queue_handler
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +79,15 @@ class MPcurses():
     def __init__(self, function, *, process_data=None, shared_data=None, processes_to_start=None, screen_layout=None, init_messages=None, setup_process_queue=True):
         """ MPCstate constructor
         """
-        self.function = function
+        if getattr(function, '__name__', None) == '_queue_handler':
+            # enable backwards compatibility for use cases where
+            # function was already decorated with queue_handler
+            # NOTE: this does not work for functions with multiple decorators
+            logger.debug('function is already decorated with queue_handler')
+            self.function = function
+        else:
+            logger.debug(f'decorating function {function.__name__} with queue_handler')
+            self.function = queue_handler(function)
 
         if not process_data:
             process_data = [{}]

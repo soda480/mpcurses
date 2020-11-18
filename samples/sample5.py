@@ -1,8 +1,6 @@
-# Sample - Prime Number Counter
-
 import sys
 import logging
-from mpcurses import queue_handler
+
 from mpcurses import MPcurses
 
 logger = logging.getLogger(__name__)
@@ -28,7 +26,6 @@ def is_prime(num):
         return True
 
 
-@queue_handler
 def check_primes(data, shared_data):
     primes = []
     range_split = data['range'].split('-')
@@ -57,4 +54,5 @@ def main():
 
 
 if __name__ == '__main__':  
+
     main()

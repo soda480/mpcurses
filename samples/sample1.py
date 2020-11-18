@@ -1,10 +1,9 @@
-# Sample - Prime Number Counter
-
-from mpcurses import queue_handler
-from mpcurses import MPcurses
-
-from time import sleep
 import logging
+from time import sleep
+
+from mpcurses import MPcurses
+from sample1_sl import get_screen_layout
+
 logger = logging.getLogger(__name__)
 
 
@@ -19,7 +18,6 @@ def is_prime(num):
         return True
 
 
-@queue_handler
 def check_primes(data, shared_data):
     primes = []
     range_split = data['range'].split('-')
@@ -37,45 +35,13 @@ def check_primes(data, shared_data):
     return len(primes)
 
 
-def get_screen_map():
-    return {
-        'number': {
-            'position': (1, 4),
-            'text': 'Number: -',
-            'text_color': 7,
-            'color': 27,
-            'clear': True,
-            'regex': '^checking (?P<value>\d+)$'
-        },
-        'prime': {
-            'position': (2, 4),
-            'text': 'Primes: 0',
-            'text_color': 7,
-            'color': 2,
-            'keep_count': True,
-            'zfill': 4,
-            'regex': '^prime$'
-        },
-        'not_prime': {
-            'position': (3, 0),
-            'text': 'Not Primes: 0',
-            'text_color': 7,
-            'color': 3,
-            'keep_count': True,
-            'zfill': 4,
-            'regex': '^not prime$'
-        },
-    }
-
-
 def main():
     MPcurses(
         function=check_primes,
         process_data=[
             {'range': '1-10000'}
         ],
-        processes_to_start=1,
-        screen_layout=get_screen_map()).execute()
+        screen_layout=get_screen_layout()).execute()
 
 
 if __name__ == '__main__':

@@ -59,7 +59,7 @@ authors = [
 ]
 summary = 'A framework that exposes a simple set of APIs enabling multi-process integration with the curses screen painting library'
 url = 'https://github.com/soda480/mpcurses'
-version = '0.1.2'
+version = '0.1.3'
 default_task = [
     'clean',
     'analyze',

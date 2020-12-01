@@ -5,7 +5,7 @@ import logging
 from time import sleep
 
 from mpcurses import MPcurses
-from sample2b_sl import get_screen_layout
+from screen_layouts.example2_sl import get_screen_layout
 
 
 logger = logging.getLogger(__name__)
@@ -18,13 +18,13 @@ def get_items():
     return items
 
 
-def process_items(group):
+def _process_items(group):
     items = get_items()
     logger.debug(f'group{group} has {len(items)} total items')
     for item in items:
         logger.debug(f'processing item "group{group}-{item}"')
         # simulate work being done
-        sleep(random.choice([0.005, 0.018]))
+        sleep(random.choice([0.005]))
         if item.count('e') > 4:
             # simulate warning
             logger.debug(f'warning processing item "group{group}-{item}"')
@@ -37,20 +37,24 @@ def process_items(group):
     logger.debug(f'processing complete for group{group}')
 
 
-def process_worker(process_data, *args):
+def process_items(process_data, *args):
     group = process_data['group']
-    process_items(group)
+    _process_items(group)
 
 
-def main():
-    MPcurses(
-        function=process_worker,
+def main(screen=True):
+    screen_layout = None
+    if screen:
+        screen_layout = get_screen_layout()
+    mpcurses = MPcurses(
+        function=process_items,
         process_data=[
             {'group': '01'},
             {'group': '02'},
             {'group': '03'}
         ],
-        screen_layout=get_screen_layout()).execute()
+        screen_layout=screen_layout)
+    mpcurses.execute()
 
 
 if __name__ == '__main__':
@@ -60,6 +64,12 @@ if __name__ == '__main__':
             level=logging.DEBUG,
             format="%(asctime)s %(processName)s %(name)s [%(funcName)s] %(levelname)s %(message)s")
         for group in ['01', '02', '03']:
-            process_items(group)
+            _process_items(group)
+    elif len(sys.argv) == 2 and sys.argv[1] == 'no-screen':
+        logging.basicConfig(
+            stream=sys.stdout,
+            level=logging.DEBUG,
+            format="%(asctime)s %(processName)s %(name)s [%(funcName)s] %(levelname)s %(message)s")
+        main(screen=False)
     else:
         main()

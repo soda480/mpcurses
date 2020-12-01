@@ -7,8 +7,7 @@ from time import sleep
 from os import getenv
 
 from mpcurses import MPcurses
-from sample3_sl import get_screen_layout
-
+from screen_layouts.example7_sl import get_screen_layout
 
 logger = logging.getLogger(__name__)
 
@@ -73,19 +72,12 @@ def update_firmware(process_data, *args):
     servername = process_data['servername']
     firmware_version = '2.64'
 
-    try:
-        sleep(random.choice([.1, .2, .3, .4, .5, .6, .7, .8]))
+    sleep(random.choice([.1, .2, .3, .4, .5, .6, .7, .8]))
 
-        logger.debug('executing firmware update on server at bay {}'.format(bay_number))
-        update_server_firmware(bay_number, servername, firmware_version)
-        logger.debug('firmware update on server at bay {} was successful'.format(bay_number))
-
-    except Exception as exception:
-        logger.error(str(exception))
-        return exception
-
-    finally:
-        logger.debug('processing next bay')
+    logger.debug('executing firmware update on server at bay {}'.format(bay_number))
+    update_server_firmware(bay_number, servername, firmware_version)
+    logger.debug('firmware update on server at bay {} was successful'.format(bay_number))
+    logger.debug('processing next bay')
 
 
 def get_current_firmware():
@@ -93,9 +85,26 @@ def get_current_firmware():
     return random.choice(['1.01', '2.01', '2.00', '2.02', '2.03', '2.04', '2.05', '2.06'])
 
 
+def configure_logging():
+    """ configure logging
+    """
+    rootLogger = logging.getLogger()
+    # must be set to this level so handlers can filter from this level
+    rootLogger.setLevel(logging.DEBUG)
+
+    name = 'sample6.log'
+    logfile = '{}/{}'.format(getenv('PWD'), name)
+    file_handler = logging.FileHandler(logfile)
+    file_formatter = logging.Formatter("%(asctime)s %(processName)s %(name)s [%(funcName)s] %(levelname)s %(message)s")
+    file_handler.setFormatter(file_formatter)
+    file_handler.setLevel(logging.DEBUG)
+    rootLogger.addHandler(file_handler)
+
+
 def main():
     """ main program
     """
+    configure_logging()
     bays = range(1,17)
     process_data = get_servers(bays)
     MPcurses(
@@ -104,7 +113,7 @@ def main():
         processes_to_start=5,
         screen_layout=get_screen_layout()).execute()
 
-    if any([process['result'] for process in process_data]):
+    if any([process.get('result') for process in process_data]):
         sys.exit(-1)
 
 

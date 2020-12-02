@@ -5,7 +5,7 @@ import logging
 from time import sleep
 
 from mpcurses import MPcurses
-from sample6_sl import get_screen_layout
+from screen_layouts.example6_sl import get_screen_layout
 
 logger = logging.getLogger(__name__)
 

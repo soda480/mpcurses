@@ -5,7 +5,7 @@ import logging
 from time import sleep
 
 from mpcurses import MPcurses
-from sample2_sl import get_screen_layout
+from screen_layouts.example1_sl import get_screen_layout
 
 
 logger = logging.getLogger(__name__)
@@ -18,13 +18,13 @@ def get_items():
     return items
 
 
-def process_items():
+def _process_items():
     items = get_items()
     logger.debug(f'{len(items)} total items')
     for item in items:
         logger.debug(f'processing item "{item}"')
         # simulate work being done
-        sleep(random.choice([0.015]))
+        sleep(random.choice([0.005]))
         if item.count('e') > 4:
             # simulate warning
             logger.debug(f'warning processing item "{item}"')
@@ -37,15 +37,15 @@ def process_items():
     logger.debug('processing complete')
 
 
-def process_worker(*args):
-
-    process_items()
+def process_items(*args):
+    _process_items()
 
 
 def main():
-    MPcurses(
-        function=process_worker,
-        screen_layout=get_screen_layout()).execute()
+    mpcurses = MPcurses(
+        function=process_items,
+        screen_layout=get_screen_layout())
+    mpcurses.execute()
 
 
 if __name__ == '__main__':
@@ -54,6 +54,6 @@ if __name__ == '__main__':
             stream=sys.stdout,
             level=logging.DEBUG,
             format="%(asctime)s %(processName)s %(name)s [%(funcName)s] %(levelname)s %(message)s")
-        process_items()
+        _process_items()
     else:
         main()

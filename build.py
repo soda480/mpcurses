@@ -14,30 +14,9 @@
 # limitations under the License.
 
 """
-The mpcurses provides a framework that enables a function to be executed at scale and its execution to be visualized on screen at runtime. It consists of a simple set of APIs that provide an abstraction for multiprocessing and the curses screen painting library. The main features:
-
-* Execute a function across one or more concurrent processes
-* Queue execution to ensure a predefined number of processes are running
-* Visualize function execution using curses screen
-* Define a screen layout using a Python dict
-* Leverage built-in directives for dynamically updating the screen
-  * Keep numeric counts
-  * Update text values
-  * Update text colors
-  * Maintain visual indicators
-  * Update progress bars
-  * Display tables
-
-The framework can be used on any ordinary Python function. The only requirement for enabling function scale and execution visualization is to ensure the function implements logging and a to provide a screen layout definition. The framework takes care of setting up the multiprocessing, configuring the curses screen and the maintaining the thread-safe queues required for communication.
-
-
-Refer to [How It Works](https://github.com/soda480/mpcurses/wiki/How-It-Works) for additional detail.
-
-
-Refer to [API Reference](https://github.com/soda480/mpcurses/wiki/API-Reference) for description of the API methods and the screen layout directives.
-
-
-For samples checkout our home page: https://github.com/soda480/mpcurses
+Mpcurses is an abstraction of the Python curses and multiprocessing libraries providing function execution and runtime visualization capabilities at scale. It contains a simple API to enable any Python function to be executed across one or more background processes and includes built-in directives to visualize the functions execution on a terminal screen. 
+The mpcurses API allows for seamless integration since it does not require the target function to include additional context about curses or multiprocessing. The target function does need to implement logging since log messages are the primary means of inter-process communication between the background processes executing the function and the main process updating the curses screen on the terminal.
+For examples checkout our home page: https://github.com/soda480/mpcurses
 """
 
 from pybuilder.core import use_plugin
@@ -59,7 +38,7 @@ authors = [
 ]
 summary = 'A framework that exposes a simple set of APIs enabling multi-process integration with the curses screen painting library'
 url = 'https://github.com/soda480/mpcurses'
-version = '0.1.3'
+version = '0.1.4'
 default_task = [
     'clean',
     'analyze',

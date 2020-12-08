@@ -7,7 +7,7 @@
 
 Mpcurses is an abstraction of the Python curses and multiprocessing libraries providing function execution and runtime visualization capabilities at scale. It contains a simple API to enable any Python function to be executed across one or more background processes and includes built-in directives to visualize the functions execution on a terminal screen. 
 
-The mpcurses API allows for a seamless integration of the target function since it does not require any additonal context about curses or multiprocessing. The target function does need to implement logging since log messages are the primary means of inter-process communication between the background processes executing the function and the main process updating the curses screen on the terminal.
+The mpcurses API allows for seamless integration since it does not require the target function to include additional context about curses or multiprocessing. The target function does need to implement logging since log messages are the primary means of inter-process communication between the background processes executing the function and the main process updating the curses screen on the terminal.
 
 The main features are:
 
@@ -32,7 +32,7 @@ pip install mpcurses
 
 ### Examples ###
 
-A simple example using mpcurses...
+A simple example using mpcurses:
 
 ```python
 from mpcurses import MPcurses
@@ -60,6 +60,36 @@ MPcurses(
 
 Executing the code above results in the following:
 ![example](/docs/images/example.gif)
+
+To scale execution of the function across multiple processes, we make a few simple updates:
+
+```python
+from mpcurses import MPcurses
+import namegenerator, time, logging
+logger = logging.getLogger(__name__)
+
+def run(*args):
+    group = args[0].get('group', 0)
+    for _ in range(0, 600):
+        logger.debug(f'processing item "[{group}]: {namegenerator.gen()}"')
+        time.sleep(.01)
+
+MPcurses(
+    function=run,
+    process_data=[{'group': 1}, {'group': 2}, {'group': 3}],
+    screen_layout={
+        'display_item': {
+            'position': (1, 1),
+            'color': 14,
+            'clear': True,
+            'regex': r'^processing item "(?P<value>.*)"$',
+            'table': True
+        }
+    }).execute()
+```
+
+Executing the code above results in the following:
+![example](/docs/images/example-multi.gif)
 
 Serveral [examples](/examples) are included to help introduce the mpcurses library. Note the functions contained in all the examples are Python functions that have no context about multiprocessing or curses, they simply perform a function on a given dataset. Mpcurses takes care of setting up the multiprocessing, configuring the curses screen and maintaining the thread-safe queues that are required for inter-process communication.
 

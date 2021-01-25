@@ -14,26 +14,18 @@ def noop(*args):
 
 
 def get_screen_layout():
-    layout = {
-        'default': {
-            'window': True,
-            'begin_y': 0,
-            'begin_x': 0,
-            'height': 200,
-            'width': 200
-        }
-    }
+    layout = {}
     y_pos = 2
     x_pos = 0
-    for index in range(0, 256):
+    for index in range(0, 2800):
         count = index + 1
-        text = 'color{}'.format(str(index).zfill(3))
+        text = 'color{}'.format(str(index).zfill(4))
         layout[text] = {
             'position': (y_pos, x_pos),
             'text': text,
             'text_color': index 
         }
-        if count % 12 == 0:
+        if count % 32 == 0:
             y_pos += 1
             x_pos = 0
         else:

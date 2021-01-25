@@ -1,11 +1,7 @@
 def get_screen_layout():
     return {
-        'default': {
-            'window': True,
-            'begin_y': 0,
-            'begin_x': 0,
-            'height': 100,
-            'width': 400
+        '_screen': {
+            'show_process_status': True
         },
         'header_group': {
             'position': (1, 4),

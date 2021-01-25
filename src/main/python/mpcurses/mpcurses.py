@@ -26,10 +26,11 @@ from queue import Empty
 from .screen import initialize_screen
 from .screen import finalize_screen
 from .screen import update_screen
-from .screen import blink_running
 from .screen import echo_to_screen
 from .screen import refresh_screen
 from .screen import validate_screen_layout
+from .screen import update_screen_status
+from .screen import validate_screen_size
 from .handler import queue_handler
 
 logger = logging.getLogger(__name__)
@@ -112,13 +113,15 @@ class MPcurses():
         self.process_queue = SimpleQueue()
 
         if screen_layout:
-            validate_screen_layout(len(self.process_data), screen_layout)
+            validate_screen_layout(len(self.process_data), self.processes_to_start, screen_layout)
         self.screen_layout = screen_layout
 
         self.init_messages = init_messages
 
         if setup_process_queue:
             self.setup_process_queue()
+
+        self.completed_processes = 0
 
         self.screen = None
 
@@ -203,12 +206,17 @@ class MPcurses():
         """
         if not self.screen:
             return
-        active_processes = str(len(self.active_processes)).zfill(3)
-        process_queue_size = str(self.process_queue.qsize()).zfill(3)
-        update_screen(f'mpcurses: number of active processes {active_processes}', self.screen, self.screen_layout)
-        update_screen(f'mpcurses: number of queued processes {process_queue_size}', self.screen, self.screen_layout)
+
         if process_completed:
-            update_screen('mpcurses: a process has completed', self.screen, self.screen_layout)
+            self.completed_processes += 1
+
+        update_screen_status(
+            self.screen,
+            'process-update',
+            self.screen_layout['_screen'],
+            running=len(self.active_processes),
+            queued=self.process_queue.qsize(),
+            completed=self.completed_processes)
 
     def setup_screen(self):
         """ update and echo data to screen
@@ -282,16 +290,13 @@ class MPcurses():
         """
         # set screen attribute so on_state_change method will have access to screen
         self.screen = screen
+        validate_screen_size(self.screen, self.screen_layout)
         initialize_screen(screen, self.screen_layout, len(self.process_data_offset))
         self.setup_screen()
-
         self.start_processes()
 
-        blink_meta = {}
         while True:
             try:
-                blink_running(screen, blink_meta)
-
                 message = self.get_message()
                 if message['control']:
                     self.process_control_message(message['offset'], message['control'])
@@ -308,7 +313,6 @@ class MPcurses():
 
         end_time = datetime.now().strftime('%m/%d/%Y %H:%M:%S')
         update_screen(f'mpcurses: Ended:{end_time}', screen, self.screen_layout)
-
         finalize_screen(screen, self.screen_layout)
 
     def execute(self):

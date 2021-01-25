@@ -1,98 +1,34 @@
 def get_screen_layout():
     return {
-        'legend': {
-            'window': True,
-            'begin_y': 19,
-            'begin_x': 0,
-            'height': 5,
-            'width': 17
-        },
-        'process_header': {
-            'position': (1, 1),
-            'text': 'Processes',
-            'text_color': 244,
-            'window_id': 'legend'
-        },
-        'active': {
-            'position': (2, 4),
-            'text': 'Active: 0',
-            'text_color': 15,
-            'color': 6,
-            'regex': r'^mpcurses: number of active processes (?P<value>\d+)$',
-            'effects': [
-                {
-                    'regex': r'^mpcurses: number of active processes 000$',
-                    'color': 15
-                }
-            ],
-            'window_id': 'legend'
-        },
-        'queued': {
-            'position': (3, 4),
-            'text': 'Queued: 0',
-            'text_color': 15,
-            'color': 11,
-            'regex': r'^mpcurses: number of queued processes (?P<value>\d+)$',
-            'effects': [
-                {
-                    'regex': r'^mpcurses: number of queued processes 000$',
-                    'color': 15
-                }
-            ],
-            'window_id': 'legend'
-        },
-        'complete': {
-            'position': (4, 1),
-            'text': 'Completed:',
-            'text_color': 15,
-            'color': 27,
-            'count': 0,
-            'keep_count': True,
-            'regex': r'^mpcurses: a process has completed$',
-            'window_id': 'legend'
-        },
-        'task_legend': {
-            'window': True,
-            'begin_y': 19,
-            'begin_x': 18,
-            'height': 7,
-            'width': 50
-        },
         'task_header': {
-            'position': (1, 0),
+            'position': (20, 0),
             'text': 'Tasks',
             'text_color': 244,
-            'window_id': 'task_legend'
         },
         'task1_header': {
-            'position': (2, 1),
+            'position': (21, 1),
             'text': '1: turn maintenance mode ON',
             'text_color': 15,
-            'window_id': 'task_legend'
         },
         'task2_header': {
-            'position': (3, 1),
+            'position': (22, 1),
             'text': '2: apply firmware update',
             'text_color': 15,
-            'window_id': 'task_legend'
         },
         'task3_header': {
-            'position': (4, 1),
+            'position': (23, 1),
             'text': '3: recycle server',
             'text_color': 15,
-            'window_id': 'task_legend'
         },
         'task4_header': {
-            'position': (5, 1),
+            'position': (24, 1),
             'text': '4: verify firmware update',
             'text_color': 15,
-            'window_id': 'task_legend'
         },
         'task5_header': {
-            'position': (6, 1),
+            'position': (25, 1),
             'text': '5: turn maintenance mode OFF',
             'text_color': 15,
-            'window_id': 'task_legend'
         },
         'bay_header': {
             'position': (2, 1),

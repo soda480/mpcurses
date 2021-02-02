@@ -41,7 +41,21 @@ def process_items(*args):
     _process_items()
 
 
+def configure_logging():
+    """ configure logging
+    """
+    rootLogger = logging.getLogger()
+    # must be set to this level so handlers can filter from this level
+    rootLogger.setLevel(logging.DEBUG)
+    file_handler = logging.FileHandler('example1.log')
+    file_formatter = logging.Formatter("%(asctime)s %(processName)s %(name)s [%(funcName)s] %(levelname)s %(message)s")
+    file_handler.setFormatter(file_formatter)
+    file_handler.setLevel(logging.DEBUG)
+    rootLogger.addHandler(file_handler)
+
+
 def main():
+    configure_logging()
     mpcurses = MPcurses(
         function=process_items,
         screen_layout=get_screen_layout())

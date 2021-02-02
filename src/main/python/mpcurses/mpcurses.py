@@ -30,7 +30,7 @@ from .screen import echo_to_screen
 from .screen import refresh_screen
 from .screen import validate_screen_layout
 from .screen import update_screen_status
-from .screen import validate_screen_size
+from .screen import blink
 from .handler import queue_handler
 
 logger = logging.getLogger(__name__)
@@ -125,6 +125,16 @@ class MPcurses():
 
         self.screen = None
 
+        self.blink_screen = True
+        if self.screen_layout:
+            self.blink_screen = self.screen_layout.get('_screen', {}).get('blink', True)
+
+        self.blink_process = None
+
+        self.blink_queue = None
+        if self.blink_screen:
+            self.blink_queue = Queue()
+
     def setup_process_queue(self):
         """ return queue containing data for each process
         """
@@ -133,6 +143,24 @@ class MPcurses():
             logger.debug(f'adding {item} to the process queue')
             self.process_queue.put(item)
         logger.debug(f'added {self.process_queue.qsize()} items to the process queue')
+
+    def start_blink_process(self):
+        """ start blink process
+        """
+        if not self.blink_screen:
+            return
+        self.blink_process = Process(
+            target=blink,
+            args=(self.blink_queue,))
+        self.blink_process.start()
+        logger.info(f'started background process for blink with process id {self.blink_process.pid}')
+
+    def stop_blink_process(self):
+        """ stop blink process
+        """
+        if self.blink_screen and self.blink_process:
+            self.blink_process.terminate()
+            logger.debug('terminated blink process')
 
     def start_processes(self):
         """ start processes
@@ -237,9 +265,27 @@ class MPcurses():
         # no active processes means its empty
         return not self.active_processes
 
+    def get_blink_message(self):
+        """ return message from blink queue
+        """
+        try:
+            return self.blink_queue.get(False)
+
+        except Empty:
+            return None
+
     def get_message(self):
         """ return message from top of message queue
         """
+        if self.blink_screen:
+            # if blink is enabled then process blink message first
+            blink_message = self.get_blink_message()
+            if blink_message:
+                update_screen_status(
+                    self.screen,
+                    blink_message,
+                    self.screen_layout['_screen'])
+
         offset = None
         control = None
         message = self.message_queue.get(False)
@@ -290,9 +336,9 @@ class MPcurses():
         """
         # set screen attribute so on_state_change method will have access to screen
         self.screen = screen
-        validate_screen_size(self.screen, self.screen_layout)
         initialize_screen(screen, self.screen_layout, len(self.process_data_offset))
         self.setup_screen()
+        self.start_blink_process()
         self.start_processes()
 
         while True:
@@ -314,6 +360,7 @@ class MPcurses():
         end_time = datetime.now().strftime('%m/%d/%Y %H:%M:%S')
         update_screen(f'mpcurses: Ended:{end_time}', screen, self.screen_layout)
         finalize_screen(screen, self.screen_layout)
+        self.stop_blink_process()
 
     def execute(self):
         """ public execute api

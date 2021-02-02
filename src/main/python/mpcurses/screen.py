@@ -16,6 +16,7 @@
 import re
 import sys
 import curses
+import itertools
 from time import time
 from time import sleep
 import logging
@@ -119,29 +120,19 @@ def update_screen_status(screen, state, config, running=None, queued=None, compl
         title = config['title']
         start_x_title = int((width // 2) - (len(title) // 2) - len(title) % 2)
         screen.addstr(0, 0, ' ' * (width - 1), curses.color_pair(color))
-        # screen.addstr(0, start_x_title, title, curses.color_pair(color))
         screen.addstr(0, width - len(title) - 1, title, curses.color_pair(color))
-        # screen.addstr(height - 1, 0, ' ' * (width - 1), curses.color_pair(color))
-
-        rtext = 'Running...'
-        # screen.addstr(height - 1, 1, rtext, curses.color_pair(color))
-        screen.addstr(0, 1, rtext, curses.color_pair(color))
 
     elif state == 'finalize':
         qtext = '[Press q to exit]'
-        # screen.move(height - 1, 0)
-        # screen.clrtoeol()
-        # screen.addstr(height - 1, 0, ' ' * (width - 1), curses.color_pair(color))
-        # screen.addstr(height - 1, 0, qtext, curses.color_pair(color))
         screen.addstr(0, 1, qtext, curses.color_pair(color))
 
-    # elif state == 'blink-on':
-    #     rtext = 'RUNNING'
-    #     screen.addstr(0, 1, rtext, curses.color_pair(color))
+    elif state == 'blink-on':
+        rtext = 'RUNNING'
+        screen.addstr(0, 1, rtext, curses.color_pair(color))
 
-    # elif state == 'blink-off':
-    #     rtext = 'RUNNING'
-    #     screen.addstr(0, 1, ' ' * len(rtext), curses.color_pair(color))
+    elif state == 'blink-off':
+        rtext = 'RUNNING'
+        screen.addstr(0, 1, ' ' * len(rtext), curses.color_pair(color))
 
     if state == 'initialize' or state == 'process-update':
 
@@ -158,25 +149,6 @@ def update_screen_status(screen, state, config, running=None, queued=None, compl
             if completed is None:
                 completed = 0
 
-            # rtext = f'Running: {str(running).zfill(zfill)}'
-            # screen.addstr(height - 3, width - len(rtext) - 1, rtext, curses.color_pair(color))   
-            # qtext = f'Queued: {str(queued).zfill(zfill)}'
-            # screen.addstr(height - 2, width - len(qtext) - 1, qtext, curses.color_pair(color))   
-            # ctext = f'Completed: {str(completed).zfill(zfill)}'
-            # screen.addstr(height - 1, width - len(ctext) - 1, ctext, curses.color_pair(color))
-
-            # ptext = f'Running: {str(running).zfill(zfill)} | Queued: {str(queued).zfill(zfill)} | Completed: {str(completed).zfill(zfill)}'
-            # ptext = f'Running:{str(running).zfill(zfill)} | Queued:{str(queued).zfill(zfill)} | Completed:{str(completed).zfill(zfill)}'
-            # ptext = f'Running:{str(running).zfill(zfill)} Queued:{str(queued).zfill(zfill)} Completed:{str(completed).zfill(zfill)}'
-            # screen.addstr(height - 1, width - len(ptext) - 1, ptext, curses.color_pair(color))
-
-            # rtext = f'  Running: {str(running).zfill(zfill)}'
-            # screen.addstr(height - 5, 1, rtext, curses.color_pair(color))   
-            # qtext = f'   Queued: {str(queued).zfill(zfill)}'
-            # screen.addstr(height - 4, 1, qtext, curses.color_pair(color))
-            # ctext = f'Completed: {str(completed).zfill(zfill)}'
-            # screen.addstr(height - 3, 1, ctext, curses.color_pair(color))
-
             rtext = f'  Running: {str(running).zfill(zfill)}'
             screen.addstr(height - 4, 1, rtext, curses.color_pair(color))   
             qtext = f'   Queued: {str(queued).zfill(zfill)}'
@@ -191,6 +163,7 @@ def initialize_screen(screen, screen_layout, offsets):
     """ initialize screen
     """
     logger.debug('initializing screen')
+    validate_screen_size(screen, screen_layout)
     initialize_colors()
     curses.curs_set(0)
 
@@ -262,11 +235,11 @@ def get_category_values(message, offset, screen_layout):
 def sanitize_message(message):
     """ return tuple consisting of offset and message
     """
-    regex = r'#(?P<offset>\-?\d+)-.*'
+    regex = r'#(?P<offset>\d+)-.*'
     match = re.match(regex, message)
     if match:
         offset = match.group('offset')
-        filtered_message = re.sub(r'#{}-'.format(offset), '', message)
+        filtered_message = re.sub(fr'#{offset}-', '', message)
         return int(offset), filtered_message
     return 0, message
 
@@ -328,7 +301,8 @@ def process_counter(offset, category, value, screen_layout, screen):
         position = screen_layout['_counter_']['position']
         color = screen_layout[category]['color']
         span = int(value) / screen_layout['_counter_']['modulus']
-        progress_value = '[{}]'.format(' ' * int(span))
+        span_text = ' ' * int(span)
+        progress_value = f'[{span_text}]'
         screen.addstr(position[0] + offset, position[1], progress_value, curses.color_pair(color))
 
 
@@ -398,12 +372,7 @@ def update_screen(message, screen, screen_layout):
         the category
     """
     offset, sanitized_message = sanitize_message(message)
-    if offset == -1:
-        update_screen_status(screen, sanitized_message, screen_layout['_screen'])
-        return
-
     category_values = get_category_values(sanitized_message, offset, screen_layout)
-
     try:
         for (category, value) in category_values:
             y_pos = get_category_y_pos(category, offset, screen_layout)
@@ -412,7 +381,6 @@ def update_screen(message, screen, screen_layout):
 
             process_clear(category, y_pos, x_pos, screen_layout, screen)
 
-            # window = screen_layout[category]['_window']
             screen.addstr(y_pos, x_pos, value, curses.color_pair(color))
 
             process_counter(offset, category, value, screen_layout, screen)
@@ -420,8 +388,7 @@ def update_screen(message, screen, screen_layout):
             screen.refresh()
 
     except Exception as exception:  # curses.error as exception:
-        logger.error('error occurred when updating screen: {}'.format(str(exception)))
-        # need to figure out why so many: wmove() returned ERR
+        logger.error(f'error occurred when updating screen: {exception}')
 
 
 def blink_running(screen, blink_meta):
@@ -458,16 +425,16 @@ def echo_to_screen(screen, data, screen_layout, offset=None):
     for key, value in data.items():
         message = ''
         if isinstance(value, (int, float, str, bool)):
-            message = "'{}' is '{}'".format(key, value)
+            message = f"'{key}' is '{value}'"
         elif isinstance(value, (list, dict, tuple)):
-            message = "'{}' has {} items".format(key, len(value))
+            message = f"'{key}' has {len(value)} items"
         if offset:
-            message = '#{}-{}'.format(offset, message)
+            message = f'#{offset}-{message}'
         logger.debug(message)
         update_screen(message, screen, screen_layout)
         if offset:
             # send empty message at offset
-            update_screen('#{}-'.format(offset), screen, screen_layout)
+            update_screen(f'#{offset}-', screen, screen_layout)
 
 
 def refresh_screen(screen):
@@ -577,11 +544,10 @@ def validate_screen_size(screen, screen_layout):
         raise Exception('the screen is not large enough for the configured layout - make the screen wider')
 
 
-# def blink(*args):
-#     """ function to enable blinking
-#     """
-#     while True:
-#         logger.debug('blink-on')
-#         sleep(.5)
-#         logger.debug('blink-off')
-#         sleep(.5)
+def blink(queue):
+    """ method to control screen blinking
+    """
+    blink_state = itertools.cycle(['blink-on', 'blink-off'])
+    while True:
+        queue.put(next(blink_state))
+        sleep(.9)

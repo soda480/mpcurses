@@ -50,8 +50,9 @@ class TestMPcurses(unittest.TestCase):
 
     @patch('mpcurses.mpcurses.validate_screen_layout')
     def test__init_Should_CallValidateScreenLayout_When_ScreenLayout(self, validate_screen_layout_patch, *patches):
-        client = MPcurses(function=Mock(__name__='mockfunc'), screen_layout='--screen-layout--', setup_process_queue=False)
-        validate_screen_layout_patch.assert_called_once_with(1, 1, '--screen-layout--')
+        screen_layout_mock = {'_screen': {}}
+        client = MPcurses(function=Mock(__name__='mockfunc'), screen_layout=screen_layout_mock, setup_process_queue=False)
+        validate_screen_layout_patch.assert_called_once_with(1, 1, screen_layout_mock)
 
     def test__init_Should_SetDefaults_When_Called(self, *patches):
         client = MPcurses(function=Mock(__name__='mockfunc'), setup_process_queue=False)
@@ -167,27 +168,25 @@ class TestMPcurses(unittest.TestCase):
         expected_process_data = [{'range': '0-1', 'result': '--result0--'}, {'range': '2-3', 'result': '--result1--'}, {'range': '4-5', 'result': '--result2--'}]
         self.assertEqual(client.process_data, expected_process_data)
 
-    @unittest.skip('skip')
-    @patch('mpcurses.mpcurses.update_screen')
-    def test__on_state_change_Should_CallExpected_When_Called(self, update_screen_patch, *patches):
+    @patch('mpcurses.mpcurses.update_screen_status')
+    def test__on_state_change_Should_CallExpected_When_Called(self, update_screen_status_patch, *patches):
         screen_mock = Mock()
         function_mock = Mock(__name__='mockfunc')
         process_data = [{'range': '0-1'}, {'range': '2-3'}, {'range': '4-5'}]
-        client = MPcurses(function=function_mock, process_data=process_data)
+        client = MPcurses(function=function_mock, process_data=process_data, screen_layout={'_screen': {}})
         client.screen = screen_mock
         client.on_state_change()
-        update_screen_patch.assert_called()
+        update_screen_status_patch.assert_called()
 
-    @unittest.skip('skip')
-    @patch('mpcurses.mpcurses.update_screen')
-    def test__on_state_change_Should_CallExpected_When_NoProcessCompleted(self, update_screen_patch, *patches):
+    @patch('mpcurses.mpcurses.update_screen_status')
+    def test__on_state_change_Should_CallExpected_When_NoProcessCompleted(self, update_screen_status_patch, *patches):
         screen_mock = Mock()
         function_mock = Mock(__name__='mockfunc')
         process_data = [{'range': '0-1'}, {'range': '2-3'}, {'range': '4-5'}]
-        client = MPcurses(function=function_mock, process_data=process_data)
+        client = MPcurses(function=function_mock, process_data=process_data, screen_layout={'_screen': {}})
         client.screen = screen_mock
         client.on_state_change(process_completed=False)
-        update_screen_patch.assert_called()
+        update_screen_status_patch.assert_called()
 
     @patch('mpcurses.mpcurses.update_screen')
     def test__on_state_change_Should_CallExpected_When_NoScreen(self, update_screen_patch, *patches):
@@ -203,18 +202,19 @@ class TestMPcurses(unittest.TestCase):
     def test__setup_screen_Should_CallExpected_When_Called(self, update_screen_patch, echo_to_screen_patch, *patches):
         screen_mock = Mock()
         function_mock = Mock(__name__='mockfunc')
+        screen_layout_mock = {'_screen': {}}
         process_data = [{'range': '0-1'}, {'range': '2-3'}, {'range': '4-5'}]
-        client = MPcurses(function=function_mock, process_data=process_data, shared_data='--shared-data--', init_messages=['--message1--', '--message2--'], screen_layout='--screen-layout--')
+        client = MPcurses(function=function_mock, process_data=process_data, shared_data='--shared-data--', init_messages=['--message1--', '--message2--'], screen_layout=screen_layout_mock)
         client.screen = screen_mock
         client.setup_screen()
         
-        update_screen_call1 = call('--message1--', screen_mock, '--screen-layout--')
+        update_screen_call1 = call('--message1--', screen_mock, screen_layout_mock)
         self.assertTrue(update_screen_call1 in update_screen_patch.mock_calls)
 
-        echo_to_screen_call1 = call(screen_mock, {'range': '0-1'}, '--screen-layout--', offset=0)
+        echo_to_screen_call1 = call(screen_mock, {'range': '0-1'}, screen_layout_mock, offset=0)
         self.assertTrue(echo_to_screen_call1 in echo_to_screen_patch.mock_calls)
 
-        echo_to_screen_call2 = call(screen_mock, '--shared-data--', '--screen-layout--')
+        echo_to_screen_call2 = call(screen_mock, '--shared-data--', screen_layout_mock)
         self.assertTrue(echo_to_screen_call2 in echo_to_screen_patch.mock_calls)
 
     @patch('mpcurses.mpcurses.validate_screen_layout')
@@ -223,12 +223,13 @@ class TestMPcurses(unittest.TestCase):
     def test__setup_screen_Should_CallExpected_When_NoInitMessages(self, update_screen_patch, echo_to_screen_patch, *patches):
         screen_mock = Mock()
         function_mock = Mock(__name__='mockfunc')
+        screen_layout_mock = {'_screen': {}}
         process_data = [{'range': '0-1'}, {'range': '2-3'}, {'range': '4-5'}]
-        client = MPcurses(function=function_mock, process_data=process_data, screen_layout='--screen-layout--')
+        client = MPcurses(function=function_mock, process_data=process_data, screen_layout=screen_layout_mock)
         client.screen = screen_mock
         client.setup_screen()
 
-        echo_to_screen_call1 = call(screen_mock, {'range': '0-1'}, '--screen-layout--', offset=0)
+        echo_to_screen_call1 = call(screen_mock, {'range': '0-1'}, screen_layout_mock, offset=0)
         self.assertTrue(echo_to_screen_call1 in echo_to_screen_patch.mock_calls)
 
     def test__active_processes_empty_Should_ReturnExpected_When_Called(self, *patches):
@@ -368,7 +369,6 @@ class TestMPcurses(unittest.TestCase):
         process_control_message_patch.assert_called_once_with('0', 'DONE')
 
     @patch('mpcurses.mpcurses.validate_screen_layout')
-    @patch('mpcurses.mpcurses.validate_screen_size')
     @patch('mpcurses.mpcurses.finalize_screen')
     @patch('mpcurses.mpcurses.initialize_screen')
     @patch('mpcurses.MPcurses.setup_screen')
@@ -380,7 +380,7 @@ class TestMPcurses(unittest.TestCase):
     @patch('mpcurses.MPcurses.get_message')
     def test__run_screen_Should_CallExpected_When_Called(self, get_message_patch, process_control_message_patch, logger_patch, update_screen_patch, refresh_screen_patch, *patches):
         process_data = [{'range': '0-1'}]
-        client = MPcurses(function=Mock(__name__='mockfunc'), process_data=process_data, screen_layout='--screen-layout--')
+        client = MPcurses(function=Mock(__name__='mockfunc'), process_data=process_data, screen_layout={'_screen': {'blink': False}})
 
         get_message_patch.side_effect = [
             #1
@@ -419,8 +419,9 @@ class TestMPcurses(unittest.TestCase):
             KeyboardInterrupt('keyboard interrupt')
         ]
         function_mock = Mock(__name__='mockfunc')
+        screen_layout_mock = {'_screen': {}}
         process_data = [{'range': '0-1'}]
-        client = MPcurses(function=function_mock, process_data=process_data, screen_layout='--screen-layout--')
+        client = MPcurses(function=function_mock, process_data=process_data, screen_layout=screen_layout_mock)
         client.execute()
         terminate_processes_patch.assert_called_once_with()
         sys_patch.exit.assert_called_once_with(-1)

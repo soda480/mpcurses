@@ -11,5 +11,3 @@ RUN pip install pybuilder==0.11.17
 RUN pyb install_dependencies
 RUN pyb clean
 RUN pyb install
-
-CMD echo 'DONE'

@@ -1,67 +1,52 @@
 def get_screen_layout():
     return {
-        '_screen': {
-            'show_process_status': True
+        'table': {
+            'orientation': 'horizontal',
+            'padding': 5
         },
         'header_group': {
-            'position': (1, 4),
-            'text': 'Group',
+            'position': (1, 9),
+            'text': 'Group:',
             'text_color': 0
         },
         'header_total': {
-            'position': (1, 12),
-            'text': 'TOT',
+            'position': (2, 9),
+            'text': 'Total:',
             'text_color': 0
         },
-        'header_successful': {
-            'position': (1, 17),
-            'text': 'SUC',
+        'header_processed': {
+            'position': (3, 4),
+            'text': 'Successful:',
             'text_color': 0
         },
         'header_warnings': {
-            'position': (1, 21),
-            'text': 'WAR',
+            'position': (4, 6),
+            'text': 'Warnings:',
             'text_color': 0
         },
         'header_errors': {
-            'position': (1, 25),
-            'text': 'ERR',
+            'position': (5, 8),
+            'text': 'Errors:',
             'text_color': 0
-        },
-        'header_item': {
-            'position': (1, 29),
-            'text': 'Item',
-            'text_color': 0
-        },
-        'active': {
-            'position': (2, 2),
-            'text': '',
-            'replace_text': '->',
-            'color': 0,
-            'regex': r'^processing item .*$',
-            'table': True
-        },
-        'inactive': {
-            'position': (2, 2),
-            'text': '',
-            'replace_text': '  ',
-            'regex': r'^processing complete for group.*$',
-            'table': True
         },
         'group': {
-            'position': (2, 4),
+            'position': (1, 18),
+            'text': '--',
+            'text_color': 0,
             'color': 14,
-            'regex': r"^(?P<value>.*) has \d+ total items$",
+            'regex': r"^group(?P<value>.*) has \d+ total items$",
             'table': True
         },
         'total': {
-            'position': (2, 12),
+            'position': (2, 16),
+            'text': '----',
+            'text_color': 0,
             'color': 15,
             'regex': r"^group.* has (?P<value>\d+) total items$",
             'table': True
         },
         'successful': {
-            'position': (2, 17),
+            'position': (3, 17),
             'text': '---',
             'text_color': 0,
             'color': 2,
@@ -70,7 +55,7 @@ def get_screen_layout():
             'table': True,
         },
         'warnings': {
-            'position': (2, 21),
+            'position': (4, 17),
             'text': '---',
             'text_color': 0,
             'color': 3,
@@ -79,7 +64,7 @@ def get_screen_layout():
             'table': True,
         },
         'errors': {
-            'position': (2, 25),
+            'position': (5, 17),
             'text': '---',
             'text_color': 0,
             'color': 1,
@@ -88,36 +73,37 @@ def get_screen_layout():
             'table': True,
         },
         'item': {
-            'position': (2, 29),
+            'position': (7, 2),
             'color': 14,
             'clear': True,
+            'padding': 33,
             'regex': r'^processing item "group\d+-(?P<value>.*)"$',
             'table': True,
         },
-        'item_done': {
-            'position': (2, 29),
+        'item_clear': {
+            'position': (7, 2),
             'replace_text': ' ',
             'clear': True,
             'regex': r'^processing complete for group.*$',
-            'table': True,
+            # 'table': True,
         },
         'group01_items_header': {
-            'position': (6, 2),
+            'position': (8, 2),
             'text': 'group01 Warnings/Errors',
             'text_color': 0
         },
         'group02_items_header': {
-            'position': (6, 35),
+            'position': (8, 35),
             'text': 'group02 Warnings/Errors',
             'text_color': 0
         },
         'group03_items_header': {
-            'position': (6, 68),
+            'position': (8, 68),
             'text': 'group03 Warnings/Errors',
             'text_color': 0
         },
         'group01_items': {
-            'position': (6, 2),
+            'position': (8, 2),
             'list': True,
             'color': 3,
             'regex': r'^(warning|error) processing item "group01-(?P<value>.*)"$',
@@ -132,7 +118,7 @@ def get_screen_layout():
             ]
         },
         'group02_items': {
-            'position': (6, 35),
+            'position': (8, 35),
             'list': True,
             'color': 3,
             'regex': r'^(warning|error) processing item "group02-(?P<value>.*)"$',
@@ -147,7 +133,7 @@ def get_screen_layout():
             ]
         },
         'group03_items': {
-            'position': (6, 68),
+            'position': (8, 68),
             'list': True,
             'color': 3,
             'regex': r'^(warning|error) processing item "group03-(?P<value>.*)"$',

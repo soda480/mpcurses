@@ -1,5 +1,5 @@
 
-# Copyright (c) 2020 Intel Corporation
+# Copyright (c) 2021 Intel Corporation
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -249,7 +249,6 @@ def get_position(text):
         return text.index(':') + 1
     elif text == len(text) * '-':
         return -1
-
     return len(text) + 1
 
 
@@ -257,6 +256,15 @@ def process_clear(category, y_pos, x_pos, screen_layout, screen):
     """ process clear directive
     """
     if screen_layout[category].get('clear'):
+        if screen_layout[category].get('table'):
+            orientation = screen_layout.get('table', {}).get('orientation', 'wrap_around')
+            if orientation == 'horizontal':
+                padding = screen_layout['table']['padding']
+                if 'padding' in screen_layout[category]:
+                    padding = screen_layout[category]['padding']
+                value = ' ' * padding
+                screen.addstr(y_pos, x_pos, value)
+                return
         screen.move(y_pos, x_pos)
         screen.clrtoeol()
 
@@ -335,11 +343,20 @@ def get_category_x_pos(category, offset, screen_layout):
         x_pos = x_pos + get_position(screen_layout[category]['text']) + 1
     if screen_layout[category].get('table'):
         if screen_layout.get('table'):
-            rows = screen_layout['table']['rows']
-            width = screen_layout['table']['width']
-            if offset >= rows:
-                x_pos += int(offset / rows) * width
-                # logger.debug(f'table offset {offset} x_pos is {x_pos}')
+            orientation = screen_layout['table'].get('orientation', 'wrap_around')
+            if orientation == 'wrap_around':
+                rows = screen_layout['table']['rows']
+                width = screen_layout['table']['width']
+                if offset >= rows:
+                    x_pos += int(offset / rows) * width
+            else:
+                # orientation is horizontal
+                padding = screen_layout['table']['padding']
+                if 'padding' in screen_layout[category]:
+                    # padding is overriden if specified in category
+                    padding = screen_layout[category].get('padding')
+                x_pos += (offset * padding)
+            # logger.debug(f'table offset {offset} x_pos is {x_pos}')
     return x_pos
 
 
@@ -352,10 +369,15 @@ def get_category_y_pos(category, offset, screen_layout):
     if screen_layout[category].get('table'):
         y_pos += offset
         if screen_layout.get('table'):
-            rows = screen_layout['table']['rows']
-            if offset >= rows:
-                y_pos -= int(offset / rows) * rows
-                # logger.debug(f'table offset {offset} y_pos is {y_pos}')
+            orientation = screen_layout['table'].get('orientation', 'wrap_around')
+            if orientation == 'wrap_around':
+                rows = screen_layout['table']['rows']
+                if offset >= rows:
+                    y_pos -= int(offset / rows) * rows
+            else:
+                # orientation is horizontal
+                y_pos -= offset
+            # logger.debug(f'table offset {offset} y_pos is {y_pos}')
     elif screen_layout[category].get('list'):
         y_pos += screen_layout[category]['_count']
     return y_pos
@@ -375,13 +397,9 @@ def update_screen(message, screen, screen_layout):
             y_pos = get_category_y_pos(category, offset, screen_layout)
             x_pos = get_category_x_pos(category, offset, screen_layout)
             color = get_category_color(category, sanitized_message, screen_layout)
-
             process_clear(category, y_pos, x_pos, screen_layout, screen)
-
             screen.addstr(y_pos, x_pos, value, curses.color_pair(color))
-
             process_counter(offset, category, value, screen_layout, screen)
-
             screen.refresh()
 
     except Exception as exception:  # curses.error as exception:
@@ -480,14 +498,16 @@ def validate_screen_layout(processes, processes_to_start, screen_layout):
     if not table:
         return
 
-    entries = table.get('rows', 0) * table.get('cols', 0)
-    if processes > entries:
-        raise Exception(f'table definition of {entries} entries not sufficient for {processes} processes')
+    orientation = table.get('orientation', 'wrap_around')
+    if orientation == 'wrap_around':
+        entries = table.get('rows', 0) * table.get('cols', 0)
+        if processes > entries:
+            raise Exception(f'table definition of {entries} entries not sufficient for {processes} processes')
 
-    if table.get('squash'):
-        rows = table.get('rows', 0)
-        if processes < rows:
-            squash_table(screen_layout, rows - processes)
+        if table.get('squash'):
+            rows = table.get('rows', 0)
+            if processes < rows:
+                squash_table(screen_layout, rows - processes)
 
 
 def validate_screen_size(screen, screen_layout):

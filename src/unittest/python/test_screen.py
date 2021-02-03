@@ -1,5 +1,5 @@
 
-# Copyright (c) 2020 Intel Corporation
+# Copyright (c) 2021 Intel Corporation
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -479,7 +479,7 @@ class TestScreen(unittest.TestCase):
 
         self.assertEqual(get_position('---'), -1)
 
-    def test__process_clear_Should_CallExpected_WhenClear(self, *patches):
+    def test__process_clear_Should_CallExpected_When_Clear(self, *patches):
         screen_mock = Mock()
         screen_layout_mock = {
             'category': {
@@ -490,15 +490,57 @@ class TestScreen(unittest.TestCase):
         screen_mock.move.assert_called_once_with(1, 1)
         screen_mock.clrtoeol.assert_called_once_with()
 
-    def test__process_clear_Should_CallExpected_WhenNoClear(self, *patches):
+    def test__process_clear_Should_CallExpected_When_NoClear(self, *patches):
         screen_mock = Mock()
         screen_layout_mock = {
             'category': {
-                'clear': False
             }
         }
         process_clear('category', 1, 1, screen_layout_mock, screen_mock)
         screen_mock.clrtoeol.assert_not_called()
+
+    def test__process_clear_Should_CallExpected_When_ClearHorizontalTablePadding(self, *patches):
+        screen_mock = Mock()
+        screen_layout_mock = {
+            'table': {
+                'orientation': 'horizontal',
+                'padding': 10
+            },
+            'category': {
+                'clear': True,
+                'table': True
+            }
+        }
+        process_clear('category', 1, 1, screen_layout_mock, screen_mock)
+        screen_mock.addstr.assert_called_once_with(1, 1, ' ' * 10)
+
+    def test__process_clear_Should_CallExpected_When_ClearHorizontalTableCategoryPadding(self, *patches):
+        screen_mock = Mock()
+        screen_layout_mock = {
+            'table': {
+                'orientation': 'horizontal',
+                'padding': 10
+            },
+            'category': {
+                'clear': True,
+                'padding': 20,
+                'table': True
+            }
+        }
+        process_clear('category', 1, 1, screen_layout_mock, screen_mock)
+        screen_mock.addstr.assert_called_once_with(1, 1, ' ' * 20)
+
+    def test__process_clear_Should_CallExpected_When_ClearNonHorizontalTable(self, *patches):
+        screen_mock = Mock()
+        screen_layout_mock = {
+            'category': {
+                'clear': True,
+                'table': True
+            }
+        }
+        process_clear('category', 1, 1, screen_layout_mock, screen_mock)
+        screen_mock.move.assert_called_once_with(1, 1)
+        screen_mock.clrtoeol.assert_called_once_with()
 
     @patch('mpcurses.screen.curses.color_pair')
     def test__process_counter_Should_CallExpected_When_CategoryModulus(self, color_pair_patch, *patches):
@@ -652,6 +694,18 @@ class TestScreen(unittest.TestCase):
         process_counter(1, 'category1', 10, screen_layout_mock, screen_mock)
         screen_mock.addstr.assert_not_called()
 
+    def test__process_counter_Should_CallExpected_When_NoCategoryNoCounter(self, *patches):
+        screen_mock = Mock()
+        screen_layout_mock = {
+            '_counter_': {
+                'categories': [
+                    'category2',
+                ]
+            }
+        }
+        process_counter(1, 'category1', 10, screen_layout_mock, screen_mock)
+        screen_mock.addstr.assert_not_called()
+
     def test__get_category_color_Should_ReturnExpected_When_EffectMatch(self, *patches):
         screen_layout = {
             'firmware': {
@@ -709,19 +763,19 @@ class TestScreen(unittest.TestCase):
         self.assertEqual(result, expected_result)
 
     @patch('mpcurses.screen.get_position')
-    def test__get_category_x_pos_Should_ReturnExpected_When_Text(self, get_position_patch, *patches):
+    def test__get_category_x_pos_Should_ReturnExpected_When_NoTableText(self, get_position_patch, *patches):
         get_position_patch.return_value = 6
         screen_layout = {
             'start': {
                 'position': (5, 12),
-                'text': 'Title:',
+                'text': 'this is some text',
             }
         }
         result = get_category_x_pos('start', 0, screen_layout)
         expected_result = 19
         self.assertEqual(result, expected_result)
 
-    def test__get_category_x_pos_Should_ReturnExpected_When_NoText(self, *patches):
+    def test__get_category_x_pos_Should_ReturnExpected_When_NoTableNoText(self, *patches):
         screen_layout = {
             'start': {
                 'position': (5, 12),
@@ -731,7 +785,7 @@ class TestScreen(unittest.TestCase):
         expected_result = 12
         self.assertEqual(result, expected_result)
 
-    def test__get_category_x_pos_Should_ReturnExpected_When_TableWraparound(self, *patches):
+    def test__get_category_x_pos_Should_ReturnExpected_When_WraparoundTableWrap(self, *patches):
         screen_layout = {
             'table': {
                 'rows': 3,
@@ -747,7 +801,7 @@ class TestScreen(unittest.TestCase):
         expected_result = 92
         self.assertEqual(result, expected_result)
 
-    def test__get_category_x_pos_Should_ReturnExpected_When_TableNoWraparound(self, *patches):
+    def test__get_category_x_pos_Should_ReturnExpected_When_WraparoundTableNoWrap(self, *patches):
         screen_layout = {
             'table': {
                 'rows': 3,
@@ -763,6 +817,37 @@ class TestScreen(unittest.TestCase):
         expected_result = 12
         self.assertEqual(result, expected_result)
 
+    def test__get_category_x_pos_Should_ReturnExpected_When_HorizontalTable(self, *patches):
+        screen_layout = {
+            'table': {
+                'orientation': 'horizontal',
+                'padding': 10
+            },
+            'start': {
+                'position': (5, 12),
+                'table': True
+            }
+        }
+        result = get_category_x_pos('start', 2, screen_layout)
+        expected_result = 12 + (2 * 10)
+        self.assertEqual(result, expected_result)
+
+    def test__get_category_x_pos_Should_ReturnExpected_When_HorizontalTableCategoryPadding(self, *patches):
+        screen_layout = {
+            'table': {
+                'orientation': 'horizontal',
+                'padding': 10
+            },
+            'start': {
+                'position': (5, 12),
+                'padding': 20,
+                'table': True
+            }
+        }
+        result = get_category_x_pos('start', 2, screen_layout)
+        expected_result = 12 + (2 * 20)
+        self.assertEqual(result, expected_result)
+
     def test__get_category_y_pos_Should_ReturnExpected_When_NoTable(self, *patches):
         screen_layout = {
             'start': {
@@ -773,7 +858,7 @@ class TestScreen(unittest.TestCase):
         expected_result = 5
         self.assertEqual(result, expected_result)
 
-    def test__get_category_y_pos_Should_ReturnExpected_When_TableWraparound(self, *patches):
+    def test__get_category_y_pos_Should_ReturnExpected_When_WraparoundTableWrap(self, *patches):
         screen_layout = {
             'table': {
                 'rows': 3,
@@ -789,7 +874,7 @@ class TestScreen(unittest.TestCase):
         expected_result = 6
         self.assertEqual(result, expected_result)
 
-    def test__get_category_y_pos_Should_ReturnExpected_When_TableNoWraparound(self, *patches):
+    def test__get_category_y_pos_Should_ReturnExpected_When_WraparoundTableNoWrap(self, *patches):
         screen_layout = {
             'table': {
                 'rows': 3,
@@ -817,6 +902,20 @@ class TestScreen(unittest.TestCase):
         }
         result = get_category_y_pos('items', 0, screen_layout)
         expected_result = 18
+        self.assertEqual(result, expected_result)
+
+    def test__get_category_y_pos_Should_ReturnExpected_When_HorizontalTable(self, *patches):
+        screen_layout = {
+            'table': {
+                'orientation': 'horizontal'
+            },
+            'start': {
+                'position': (5, 12),
+                'table': True
+            }
+        }
+        result = get_category_y_pos('start', 2, screen_layout)
+        expected_result = 5
         self.assertEqual(result, expected_result)
 
     @patch('mpcurses.screen.get_category_values', return_value=None)
@@ -1194,7 +1293,16 @@ class TestScreen(unittest.TestCase):
         }
         validate_screen_layout(30, 30, screen_layout_mock)
         squash_table_patch.assert_not_called()
-        squash_table_patch.assert_not_called()
+
+    @patch('mpcurses.screen.set_screen_defaults')
+    @patch('mpcurses.screen.squash_table')
+    def test__validate_screen_layout_Should_CallExpected_When_HorizontalTable(self, squash_table_patch, *patches):
+        screen_layout_mock = {
+            'table': {
+                'orientation': 'horizontal'
+            }
+        }
+        validate_screen_layout(30, 30, screen_layout_mock)
 
     def test__validate_screen_size_Should_RaiseExeption_When_ScreenNotTallEnough(self, *patches):
         screen_mock = Mock()
@@ -1228,8 +1336,26 @@ class TestScreen(unittest.TestCase):
         with self.assertRaises(Exception):
             validate_screen_size(screen_mock, screen_layout_mock)
 
+    def test__validate_screen_size_Should_NotRaiseExeption_When_Called(self, *patches):
+        screen_mock = Mock()
+        screen_mock.getmaxyx.return_value = (0, 0)
+        screen_layout_mock = {
+            'category1': {
+                'position': (0, 0)
+            }
+        }
+        validate_screen_size(screen_mock, screen_layout_mock)
+
     @patch('mpcurses.screen.sleep')
-    def test__blink_Should_CallExpected_When_Called(self, next_patch, *patches):
+    def test__blink_Should_CallExpected_When_Called(self, *patches):
         queue_mock = Mock()
         blink(queue_mock, terminate=True)
         queue_mock.put.assert_called_with('blink-on')
+
+    @patch('mpcurses.screen.sleep')
+    @patch('mpcurses.screen.itertools')
+    def test__blink_Should_CallExpected_When_ForBranchCoverage(self, itertools_patch, *patches):
+        itertools_patch.cycle.return_value = iter(['blink-on', 'blink-off'])
+        queue_mock = Mock()
+        with self.assertRaises(StopIteration):
+            blink(queue_mock)

@@ -83,6 +83,40 @@ class TestMPcurses(unittest.TestCase):
         client.setup_process_queue()
         self.assertEqual(client.process_queue.qsize(), 3)
 
+    @patch('mpcurses.mpcurses.blink')
+    @patch('mpcurses.mpcurses.Process')
+    def test__start_blink_process_Should_CallExpected_When_ScreenBlink(self, process_patch, blink_patch, *patches):
+        function_mock = Mock(__name__='_queue_handler')
+        process_mock = Mock()
+        process_patch.return_value = process_mock
+        screen_layout = {
+            '_screen': {
+                'blink': True
+            }
+        }
+        client = MPcurses(function=function_mock, screen_layout=screen_layout)
+        client.start_blink_process()
+        process_patch.assert_called_once_with(
+            target=blink_patch,
+            args=((client.blink_queue,)))
+        process_mock.start.assert_called_once_with()
+
+    @patch('mpcurses.mpcurses.Process')
+    def test__start_blink_process_Should_CallExpected_When_NoScreenBlink(self, process_patch, *patches):
+        function_mock = Mock(__name__='_queue_handler')
+        client = MPcurses(function=function_mock)
+        client.start_blink_process()
+        process_patch.assert_not_called()
+
+    def test__stop_blink_process_Should_CallExpected_When_BlinkScreenBlinkProces(self, *patches):
+        process_mock = Mock()
+        function_mock = Mock(__name__='_queue_handler')
+        client = MPcurses(function=function_mock)
+        client.blink_screen = True
+        client.blink_process = process_mock
+        client.stop_blink_process()
+        process_mock.terminate.assert_called_once_with()
+
     @patch('mpcurses.MPcurses.start_next_process')
     def test__start_processes_Should_CallStartNextProcess_When_Called(self, start_next_process_patch, *patches):
         function_mock = Mock(__name__='mockfunc')
@@ -241,6 +275,52 @@ class TestMPcurses(unittest.TestCase):
         self.assertFalse(client.active_processes_empty())
         client.active_processes = {}
         self.assertTrue(client.active_processes_empty())
+
+    @patch('mpcurses.mpcurses.validate_screen_layout')
+    def test__get_blink_message_Should_ReturnExpected_When_Empty(self, *patches):
+        function_mock = Mock(__name__='_queue_handler')
+        screen_layout = {
+            '_screen': {
+                'blink': True
+            }
+        }
+        client = MPcurses(function=function_mock, screen_layout=screen_layout)
+        result = client.get_blink_message()
+        self.assertIsNone(result)
+
+    @patch('mpcurses.mpcurses.update_screen_status')
+    @patch('mpcurses.MPcurses.get_blink_message')
+    def test__get_message_Should_ReturnExpected_When_BlinkScreen(self, get_blink_message_patch, update_screen_status_patch, *patches):
+        get_blink_message_patch.return_value = 'blink-on'
+        function_mock = Mock(__name__='_queue_handler')
+        screen_layout = {
+            '_screen': {
+                'blink': True
+            }
+        }
+        client = MPcurses(function=function_mock, screen_layout=screen_layout)
+        message_queue_mock = Mock()
+        message_queue_mock.get.return_value = '#0-DONE'
+        client.message_queue = message_queue_mock
+        client.get_message()
+        update_screen_status_patch.assert_called_once_with(client.screen, 'blink-on', screen_layout['_screen'])
+
+    @patch('mpcurses.mpcurses.update_screen_status')
+    @patch('mpcurses.MPcurses.get_blink_message')
+    def test__get_message_Should_ReturnExpected_When_BlinkScreenNoMessage(self, get_blink_message_patch, update_screen_status_patch, *patches):
+        get_blink_message_patch.return_value = None
+        function_mock = Mock(__name__='_queue_handler')
+        screen_layout = {
+            '_screen': {
+                'blink': True
+            }
+        }
+        client = MPcurses(function=function_mock, screen_layout=screen_layout)
+        message_queue_mock = Mock()
+        message_queue_mock.get.return_value = '#0-DONE'
+        client.message_queue = message_queue_mock
+        client.get_message()
+        update_screen_status_patch.assert_not_called()
 
     def test__get_message_Should_ReturnExpected_When_ControlDone(self, *patches):
         process_data = [{'range': '0-1'}]

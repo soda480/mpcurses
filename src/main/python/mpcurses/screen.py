@@ -68,7 +68,6 @@ def initialize_text(offsets, category, screen_layout, screen):
     """ initialize screen for categories containing text
     """
     category_data = screen_layout[category]
-    # window = category_data['_window']
     if category_data.get('table'):
         for offset in range(0, offsets):
             screen.addstr(
@@ -118,7 +117,6 @@ def update_screen_status(screen, state, config, running=None, queued=None, compl
 
     if state == 'initialize':
         title = config['title']
-        start_x_title = int((width // 2) - (len(title) // 2) - len(title) % 2)
         screen.addstr(0, 0, ' ' * (width - 1), curses.color_pair(color))
         screen.addstr(0, width - len(title) - 1, title, curses.color_pair(color))
 
@@ -134,7 +132,7 @@ def update_screen_status(screen, state, config, running=None, queued=None, compl
         rtext = 'RUNNING'
         screen.addstr(0, 1, ' ' * len(rtext), curses.color_pair(color))
 
-    if state == 'initialize' or state == 'process-update':
+    if state in ('initialize', 'process-update'):
 
         if config['show_process_status']:
 
@@ -150,7 +148,7 @@ def update_screen_status(screen, state, config, running=None, queued=None, compl
                 completed = 0
 
             rtext = f'  Running: {str(running).zfill(zfill)}'
-            screen.addstr(height - 4, 1, rtext, curses.color_pair(color))   
+            screen.addstr(height - 4, 1, rtext, curses.color_pair(color))
             qtext = f'   Queued: {str(queued).zfill(zfill)}'
             screen.addstr(height - 3, 1, qtext, curses.color_pair(color))
             ctext = f'Completed: {str(completed).zfill(zfill)}'
@@ -259,7 +257,6 @@ def process_clear(category, y_pos, x_pos, screen_layout, screen):
     """ process clear directive
     """
     if screen_layout[category].get('clear'):
-        # window = screen_layout[category]['_window']
         screen.move(y_pos, x_pos)
         screen.clrtoeol()
 
@@ -269,7 +266,7 @@ def process_counter(offset, category, value, screen_layout, screen):
     """
     if '_counter_' not in screen_layout:
         return
-    # window = screen_layout[category]['_window']
+
     if category in screen_layout['_counter_']['categories']:
         position = screen_layout['_counter_']['position']
         x_pos = position[1] + screen_layout['_counter_'][offset]['_count']
@@ -391,34 +388,6 @@ def update_screen(message, screen, screen_layout):
         logger.error(f'error occurred when updating screen: {exception}')
 
 
-def blink_running(screen, blink_meta):
-    """ blink running message to screen every .7 seconds
-
-        this was implemented to provide a message that continuously blinks a message
-        on the screen to indicate that the program is still working
-    """
-    if not blink_meta:
-        blink_meta['blink_on_time'] = time()
-        blink_meta['blink_off_time'] = time()
-        blink_meta['blink_on'] = True
-        screen.addstr(0, 0, ' RUNNING ', curses.color_pair(11))
-        return
-
-    current_time = time()
-    if blink_meta['blink_on']:
-        _, seconds = divmod((current_time - blink_meta['blink_on_time']), 60)
-        if seconds > .7:
-            screen.addstr(0, 0, ' RUNNING ', curses.color_pair(16))
-            blink_meta['blink_on'] = False
-            blink_meta['blink_off_time'] = current_time
-    else:
-        _, seconds = divmod((current_time - blink_meta['blink_off_time']), 60)
-        if seconds > .7:
-            screen.addstr(0, 0, ' RUNNING ', curses.color_pair(11))
-            blink_meta['blink_on'] = True
-            blink_meta['blink_on_time'] = current_time
-
-
 def echo_to_screen(screen, data, screen_layout, offset=None):
     """ iterate over items in data dict update screen with echo messages in shared data
     """
@@ -527,7 +496,7 @@ def validate_screen_size(screen, screen_layout):
     screen_height, screen_width = screen.getmaxyx()
     max_y_pos = 0
     max_x_pos = 0
-    for category, data in screen_layout.items():
+    for _, data in screen_layout.items():
         position = data.get('position')
         if position:
             y_pos = position[0]
@@ -544,10 +513,12 @@ def validate_screen_size(screen, screen_layout):
         raise Exception('the screen is not large enough for the configured layout - make the screen wider')
 
 
-def blink(queue):
+def blink(queue, terminate=False):
     """ method to control screen blinking
     """
     blink_state = itertools.cycle(['blink-on', 'blink-off'])
     while True:
         queue.put(next(blink_state))
         sleep(.9)
+        if terminate:
+            break

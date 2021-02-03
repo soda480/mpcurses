@@ -125,7 +125,7 @@ class MPcurses():
 
         self.screen = None
 
-        self.blink_screen = True
+        self.blink_screen = False
         if self.screen_layout:
             self.blink_screen = self.screen_layout.get('_screen', {}).get('blink', True)
 

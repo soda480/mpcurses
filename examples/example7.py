@@ -92,7 +92,7 @@ def configure_logging():
     # must be set to this level so handlers can filter from this level
     rootLogger.setLevel(logging.DEBUG)
 
-    name = 'sample6.log'
+    name = 'example7.log'
     logfile = '{}/{}'.format(getenv('PWD'), name)
     file_handler = logging.FileHandler(logfile)
     file_formatter = logging.Formatter("%(asctime)s %(processName)s %(name)s [%(funcName)s] %(levelname)s %(message)s")

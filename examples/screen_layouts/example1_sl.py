@@ -1,12 +1,9 @@
 def get_screen_layout():
     return {
-        'default': {
-            'window': True,
-            'begin_y': 0,
-            'begin_x': 0,
-            'height': 100,
-            'width': 200
-        },
+        # '_screen': {
+        #     # 'title': 'My cool program',
+        #     'color': 235
+        # },
         'total': {
             'position': (1, 9),
             'text': 'Total: 0',

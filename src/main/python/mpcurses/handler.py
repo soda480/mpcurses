@@ -1,5 +1,5 @@
 
-# Copyright (c) 2020 Intel Corporation
+# Copyright (c) 2021 Intel Corporation
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -33,13 +33,13 @@ class QueueHandler(Handler):
         message = record.msg
 
         if record.levelno >= 40:
-            message = 'ERROR: {}'.format(message)
+            message = f'ERROR: {message}'
         elif record.levelno >= 30:
-            message = 'WARN: {}'.format(message)
+            message = f'WARN: {message}'
         elif record.levelno == 20:
-            message = 'INFO: {}'.format(message)
+            message = f'INFO: {message}'
 
-        message = '#{}-{}'.format(self.offset, message)
+        message = f'#{self.offset}-{message}'
         self.message_queue.put(message)
 
 
@@ -56,7 +56,6 @@ def queue_handler(function):
         message_queue = kwargs.pop('message_queue', None)
         result_queue = kwargs.pop('result_queue', None)
         result = None
-
         if message_queue:
             logger.debug(f"configuring message queue log handler for '{function.__name__}' offset {offset}")
             handler = QueueHandler(message_queue, offset)

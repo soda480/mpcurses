@@ -1,5 +1,5 @@
 
-# Copyright (c) 2020 Intel Corporation
+# Copyright (c) 2021 Intel Corporation
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ authors = [
 ]
 summary = 'A framework that exposes a simple set of APIs enabling multi-process integration with the curses screen painting library'
 url = 'https://github.com/soda480/mpcurses'
-version = '0.1.4'
+version = '0.2.0'
 default_task = [
     'clean',
     'analyze',

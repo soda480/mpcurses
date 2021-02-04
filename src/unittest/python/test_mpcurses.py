@@ -1,5 +1,5 @@
 
-# Copyright (c) 2020 Intel Corporation
+# Copyright (c) 2021 Intel Corporation
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -50,8 +50,9 @@ class TestMPcurses(unittest.TestCase):
 
     @patch('mpcurses.mpcurses.validate_screen_layout')
     def test__init_Should_CallValidateScreenLayout_When_ScreenLayout(self, validate_screen_layout_patch, *patches):
-        client = MPcurses(function=Mock(__name__='mockfunc'), screen_layout='--screen-layout--', setup_process_queue=False)
-        validate_screen_layout_patch.assert_called_once_with(1, '--screen-layout--')
+        screen_layout_mock = {'_screen': {}}
+        client = MPcurses(function=Mock(__name__='mockfunc'), screen_layout=screen_layout_mock, setup_process_queue=False)
+        validate_screen_layout_patch.assert_called_once_with(1, 1, screen_layout_mock)
 
     def test__init_Should_SetDefaults_When_Called(self, *patches):
         client = MPcurses(function=Mock(__name__='mockfunc'), setup_process_queue=False)
@@ -81,6 +82,40 @@ class TestMPcurses(unittest.TestCase):
         client = MPcurses(function=Mock(__name__='mockfunc'), process_data=process_data, setup_process_queue=False)
         client.setup_process_queue()
         self.assertEqual(client.process_queue.qsize(), 3)
+
+    @patch('mpcurses.mpcurses.blink')
+    @patch('mpcurses.mpcurses.Process')
+    def test__start_blink_process_Should_CallExpected_When_ScreenBlink(self, process_patch, blink_patch, *patches):
+        function_mock = Mock(__name__='_queue_handler')
+        process_mock = Mock()
+        process_patch.return_value = process_mock
+        screen_layout = {
+            '_screen': {
+                'blink': True
+            }
+        }
+        client = MPcurses(function=function_mock, screen_layout=screen_layout)
+        client.start_blink_process()
+        process_patch.assert_called_once_with(
+            target=blink_patch,
+            args=((client.blink_queue,)))
+        process_mock.start.assert_called_once_with()
+
+    @patch('mpcurses.mpcurses.Process')
+    def test__start_blink_process_Should_CallExpected_When_NoScreenBlink(self, process_patch, *patches):
+        function_mock = Mock(__name__='_queue_handler')
+        client = MPcurses(function=function_mock)
+        client.start_blink_process()
+        process_patch.assert_not_called()
+
+    def test__stop_blink_process_Should_CallExpected_When_BlinkScreenBlinkProces(self, *patches):
+        process_mock = Mock()
+        function_mock = Mock(__name__='_queue_handler')
+        client = MPcurses(function=function_mock)
+        client.blink_screen = True
+        client.blink_process = process_mock
+        client.stop_blink_process()
+        process_mock.terminate.assert_called_once_with()
 
     @patch('mpcurses.MPcurses.start_next_process')
     def test__start_processes_Should_CallStartNextProcess_When_Called(self, start_next_process_patch, *patches):
@@ -167,25 +202,25 @@ class TestMPcurses(unittest.TestCase):
         expected_process_data = [{'range': '0-1', 'result': '--result0--'}, {'range': '2-3', 'result': '--result1--'}, {'range': '4-5', 'result': '--result2--'}]
         self.assertEqual(client.process_data, expected_process_data)
 
-    @patch('mpcurses.mpcurses.update_screen')
-    def test__on_state_change_Should_CallExpected_When_Called(self, update_screen_patch, *patches):
+    @patch('mpcurses.mpcurses.update_screen_status')
+    def test__on_state_change_Should_CallExpected_When_Called(self, update_screen_status_patch, *patches):
         screen_mock = Mock()
         function_mock = Mock(__name__='mockfunc')
         process_data = [{'range': '0-1'}, {'range': '2-3'}, {'range': '4-5'}]
-        client = MPcurses(function=function_mock, process_data=process_data)
+        client = MPcurses(function=function_mock, process_data=process_data, screen_layout={'_screen': {}})
         client.screen = screen_mock
         client.on_state_change()
-        update_screen_patch.assert_called()
+        update_screen_status_patch.assert_called()
 
-    @patch('mpcurses.mpcurses.update_screen')
-    def test__on_state_change_Should_CallExpected_When_NoProcessCompleted(self, update_screen_patch, *patches):
+    @patch('mpcurses.mpcurses.update_screen_status')
+    def test__on_state_change_Should_CallExpected_When_NoProcessCompleted(self, update_screen_status_patch, *patches):
         screen_mock = Mock()
         function_mock = Mock(__name__='mockfunc')
         process_data = [{'range': '0-1'}, {'range': '2-3'}, {'range': '4-5'}]
-        client = MPcurses(function=function_mock, process_data=process_data)
+        client = MPcurses(function=function_mock, process_data=process_data, screen_layout={'_screen': {}})
         client.screen = screen_mock
         client.on_state_change(process_completed=False)
-        update_screen_patch.assert_called()
+        update_screen_status_patch.assert_called()
 
     @patch('mpcurses.mpcurses.update_screen')
     def test__on_state_change_Should_CallExpected_When_NoScreen(self, update_screen_patch, *patches):
@@ -201,18 +236,19 @@ class TestMPcurses(unittest.TestCase):
     def test__setup_screen_Should_CallExpected_When_Called(self, update_screen_patch, echo_to_screen_patch, *patches):
         screen_mock = Mock()
         function_mock = Mock(__name__='mockfunc')
+        screen_layout_mock = {'_screen': {}}
         process_data = [{'range': '0-1'}, {'range': '2-3'}, {'range': '4-5'}]
-        client = MPcurses(function=function_mock, process_data=process_data, shared_data='--shared-data--', init_messages=['--message1--', '--message2--'], screen_layout='--screen-layout--')
+        client = MPcurses(function=function_mock, process_data=process_data, shared_data='--shared-data--', init_messages=['--message1--', '--message2--'], screen_layout=screen_layout_mock)
         client.screen = screen_mock
         client.setup_screen()
         
-        update_screen_call1 = call('--message1--', screen_mock, '--screen-layout--')
+        update_screen_call1 = call('--message1--', screen_mock, screen_layout_mock)
         self.assertTrue(update_screen_call1 in update_screen_patch.mock_calls)
 
-        echo_to_screen_call1 = call(screen_mock, {'range': '0-1'}, '--screen-layout--', offset=0)
+        echo_to_screen_call1 = call(screen_mock, {'range': '0-1'}, screen_layout_mock, offset=0)
         self.assertTrue(echo_to_screen_call1 in echo_to_screen_patch.mock_calls)
 
-        echo_to_screen_call2 = call(screen_mock, '--shared-data--', '--screen-layout--')
+        echo_to_screen_call2 = call(screen_mock, '--shared-data--', screen_layout_mock)
         self.assertTrue(echo_to_screen_call2 in echo_to_screen_patch.mock_calls)
 
     @patch('mpcurses.mpcurses.validate_screen_layout')
@@ -221,12 +257,13 @@ class TestMPcurses(unittest.TestCase):
     def test__setup_screen_Should_CallExpected_When_NoInitMessages(self, update_screen_patch, echo_to_screen_patch, *patches):
         screen_mock = Mock()
         function_mock = Mock(__name__='mockfunc')
+        screen_layout_mock = {'_screen': {}}
         process_data = [{'range': '0-1'}, {'range': '2-3'}, {'range': '4-5'}]
-        client = MPcurses(function=function_mock, process_data=process_data, screen_layout='--screen-layout--')
+        client = MPcurses(function=function_mock, process_data=process_data, screen_layout=screen_layout_mock)
         client.screen = screen_mock
         client.setup_screen()
 
-        echo_to_screen_call1 = call(screen_mock, {'range': '0-1'}, '--screen-layout--', offset=0)
+        echo_to_screen_call1 = call(screen_mock, {'range': '0-1'}, screen_layout_mock, offset=0)
         self.assertTrue(echo_to_screen_call1 in echo_to_screen_patch.mock_calls)
 
     def test__active_processes_empty_Should_ReturnExpected_When_Called(self, *patches):
@@ -238,6 +275,52 @@ class TestMPcurses(unittest.TestCase):
         self.assertFalse(client.active_processes_empty())
         client.active_processes = {}
         self.assertTrue(client.active_processes_empty())
+
+    @patch('mpcurses.mpcurses.validate_screen_layout')
+    def test__get_blink_message_Should_ReturnExpected_When_Empty(self, *patches):
+        function_mock = Mock(__name__='_queue_handler')
+        screen_layout = {
+            '_screen': {
+                'blink': True
+            }
+        }
+        client = MPcurses(function=function_mock, screen_layout=screen_layout)
+        result = client.get_blink_message()
+        self.assertIsNone(result)
+
+    @patch('mpcurses.mpcurses.update_screen_status')
+    @patch('mpcurses.MPcurses.get_blink_message')
+    def test__get_message_Should_ReturnExpected_When_BlinkScreen(self, get_blink_message_patch, update_screen_status_patch, *patches):
+        get_blink_message_patch.return_value = 'blink-on'
+        function_mock = Mock(__name__='_queue_handler')
+        screen_layout = {
+            '_screen': {
+                'blink': True
+            }
+        }
+        client = MPcurses(function=function_mock, screen_layout=screen_layout)
+        message_queue_mock = Mock()
+        message_queue_mock.get.return_value = '#0-DONE'
+        client.message_queue = message_queue_mock
+        client.get_message()
+        update_screen_status_patch.assert_called_once_with(client.screen, 'blink-on', screen_layout['_screen'])
+
+    @patch('mpcurses.mpcurses.update_screen_status')
+    @patch('mpcurses.MPcurses.get_blink_message')
+    def test__get_message_Should_ReturnExpected_When_BlinkScreenNoMessage(self, get_blink_message_patch, update_screen_status_patch, *patches):
+        get_blink_message_patch.return_value = None
+        function_mock = Mock(__name__='_queue_handler')
+        screen_layout = {
+            '_screen': {
+                'blink': True
+            }
+        }
+        client = MPcurses(function=function_mock, screen_layout=screen_layout)
+        message_queue_mock = Mock()
+        message_queue_mock.get.return_value = '#0-DONE'
+        client.message_queue = message_queue_mock
+        client.get_message()
+        update_screen_status_patch.assert_not_called()
 
     def test__get_message_Should_ReturnExpected_When_ControlDone(self, *patches):
         process_data = [{'range': '0-1'}]
@@ -366,7 +449,6 @@ class TestMPcurses(unittest.TestCase):
         process_control_message_patch.assert_called_once_with('0', 'DONE')
 
     @patch('mpcurses.mpcurses.validate_screen_layout')
-    @patch('mpcurses.mpcurses.blink_running')
     @patch('mpcurses.mpcurses.finalize_screen')
     @patch('mpcurses.mpcurses.initialize_screen')
     @patch('mpcurses.MPcurses.setup_screen')
@@ -378,7 +460,7 @@ class TestMPcurses(unittest.TestCase):
     @patch('mpcurses.MPcurses.get_message')
     def test__run_screen_Should_CallExpected_When_Called(self, get_message_patch, process_control_message_patch, logger_patch, update_screen_patch, refresh_screen_patch, *patches):
         process_data = [{'range': '0-1'}]
-        client = MPcurses(function=Mock(__name__='mockfunc'), process_data=process_data, screen_layout='--screen-layout--')
+        client = MPcurses(function=Mock(__name__='mockfunc'), process_data=process_data, screen_layout={'_screen': {'blink': False}})
 
         get_message_patch.side_effect = [
             #1
@@ -417,8 +499,9 @@ class TestMPcurses(unittest.TestCase):
             KeyboardInterrupt('keyboard interrupt')
         ]
         function_mock = Mock(__name__='mockfunc')
+        screen_layout_mock = {'_screen': {}}
         process_data = [{'range': '0-1'}]
-        client = MPcurses(function=function_mock, process_data=process_data, screen_layout='--screen-layout--')
+        client = MPcurses(function=function_mock, process_data=process_data, screen_layout=screen_layout_mock)
         client.execute()
         terminate_processes_patch.assert_called_once_with()
         sys_patch.exit.assert_called_once_with(-1)

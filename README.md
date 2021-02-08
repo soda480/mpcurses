@@ -32,6 +32,9 @@ pip install mpcurses
 
 ### Examples ###
 
+To run the samples below you need to install the namegenerator module `pip install namegenerator`
+
+
 A simple example using mpcurses:
 
 ```python

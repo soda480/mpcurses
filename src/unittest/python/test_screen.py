@@ -214,7 +214,7 @@ class TestScreen(unittest.TestCase):
             'color': 0
         }
         update_screen_status(screen_mock, 'finalize', config_mock)
-        screen_mock.addstr.assert_called_once_with(0, 1, '[Press q to exit]', color_pair_patch.return_value)   
+        screen_mock.addstr.assert_called_once_with(0, 1, '[Press q to exit]', color_pair_patch.return_value)
 
     @patch('mpcurses.screen.curses.color_pair')
     def test__update_screen_status_Should_CallExpected_When_StateBlinkOn(self, color_pair_patch, *patches):
@@ -224,7 +224,7 @@ class TestScreen(unittest.TestCase):
             'color': 0
         }
         update_screen_status(screen_mock, 'blink-on', config_mock)
-        screen_mock.addstr.assert_called_once_with(0, 1, 'RUNNING', color_pair_patch.return_value)   
+        screen_mock.addstr.assert_called_once_with(0, 1, 'RUNNING', color_pair_patch.return_value)
 
     @patch('mpcurses.screen.curses.color_pair')
     def test__update_screen_status_Should_CallExpected_When_StateBlinkOff(self, color_pair_patch, *patches):
@@ -234,7 +234,7 @@ class TestScreen(unittest.TestCase):
             'color': 0
         }
         update_screen_status(screen_mock, 'blink-off', config_mock)
-        screen_mock.addstr.assert_called_once_with(0, 1, ' ' * len('RUNNING'), color_pair_patch.return_value)   
+        screen_mock.addstr.assert_called_once_with(0, 1, ' ' * len('RUNNING'), color_pair_patch.return_value)
 
     @patch('mpcurses.screen.curses.color_pair')
     def test__update_screen_status_Should_CallExpected_When_ProcessUpdateNone(self, color_pair_patch, *patches):
@@ -694,7 +694,7 @@ class TestScreen(unittest.TestCase):
         process_counter(1, 'category1', 10, screen_layout_mock, screen_mock)
         screen_mock.addstr.assert_not_called()
 
-    def test__process_counter_Should_CallExpected_When_NoCategoryNoCounter(self, *patches):
+    def test__process_counter_Should_CallExpected_When_CategoryNotInCounter(self, *patches):
         screen_mock = Mock()
         screen_layout_mock = {
             '_counter_': {

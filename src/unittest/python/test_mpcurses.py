@@ -45,13 +45,13 @@ class TestMPcurses(unittest.TestCase):
 
     @patch('mpcurses.MPcurses.setup_process_queue')
     def test__init_Should_CallSetupProcessQueue_When_SetupProcessQueue(self, setup_process_queue_patch, *patches):
-        client = MPcurses(function=Mock(__name__='mockfunc'))
+        MPcurses(function=Mock(__name__='mockfunc'))
         setup_process_queue_patch.assert_called_once_with()
 
     @patch('mpcurses.mpcurses.validate_screen_layout')
     def test__init_Should_CallValidateScreenLayout_When_ScreenLayout(self, validate_screen_layout_patch, *patches):
         screen_layout_mock = {'_screen': {}}
-        client = MPcurses(function=Mock(__name__='mockfunc'), screen_layout=screen_layout_mock, setup_process_queue=False)
+        MPcurses(function=Mock(__name__='mockfunc'), screen_layout=screen_layout_mock, setup_process_queue=False)
         validate_screen_layout_patch.assert_called_once_with(1, 1, screen_layout_mock)
 
     def test__init_Should_SetDefaults_When_Called(self, *patches):
@@ -163,7 +163,7 @@ class TestMPcurses(unittest.TestCase):
         client = MPcurses(function=function_mock, process_data=process_data, shared_data='--shared-data--')
         process1_mock = Mock()
         process2_mock = Mock()
-        client.active_processes = {'0': process1_mock, '1': process2_mock}       
+        client.active_processes = {'0': process1_mock, '1': process2_mock}
         client.terminate_processes()
         process1_mock.terminate.assert_called_once_with()
         process2_mock.terminate.assert_called_once_with()
@@ -174,7 +174,7 @@ class TestMPcurses(unittest.TestCase):
         client = MPcurses(function=function_mock, process_data=process_data)
         self.assertEqual(client.process_queue.qsize(), 3)
         client.purge_process_queue()
-        self.assertTrue(client.process_queue.empty())        
+        self.assertTrue(client.process_queue.empty())
 
     @patch('mpcurses.mpcurses.logger')
     def test__remove_active_process_Should_CallExpected_When_Called(self, logger_patch, *patches):
@@ -183,7 +183,7 @@ class TestMPcurses(unittest.TestCase):
         client = MPcurses(function=function_mock, process_data=process_data)
         process_mock = Mock(pid=121372)
         client.active_processes['0'] = process_mock
-        client.remove_active_process('0')   
+        client.remove_active_process('0')
         logger_patch.info.assert_called_once_with('process at offset 0 process id 121372 has completed')
 
     def test__update_result_Should_CallExpected_When_Called(self, *patches):
@@ -241,7 +241,7 @@ class TestMPcurses(unittest.TestCase):
         client = MPcurses(function=function_mock, process_data=process_data, shared_data='--shared-data--', init_messages=['--message1--', '--message2--'], screen_layout=screen_layout_mock)
         client.screen = screen_mock
         client.setup_screen()
-        
+
         update_screen_call1 = call('--message1--', screen_mock, screen_layout_mock)
         self.assertTrue(update_screen_call1 in update_screen_patch.mock_calls)
 
@@ -267,7 +267,6 @@ class TestMPcurses(unittest.TestCase):
         self.assertTrue(echo_to_screen_call1 in echo_to_screen_patch.mock_calls)
 
     def test__active_processes_empty_Should_ReturnExpected_When_Called(self, *patches):
-        screen_mock = Mock()
         function_mock = Mock(__name__='mockfunc')
         process_data = [{'range': '0-1'}]
         client = MPcurses(function=function_mock, process_data=process_data)
@@ -463,31 +462,31 @@ class TestMPcurses(unittest.TestCase):
         client = MPcurses(function=Mock(__name__='mockfunc'), process_data=process_data, screen_layout={'_screen': {'blink': False}})
 
         get_message_patch.side_effect = [
-            #1
+            # 1
             {'offset': None, 'control': None, 'message': '#0-this is message1'},
-            #2
+            # 2
             Empty('empty'),
-            #3
+            # 3
             {'offset': None, 'control': None, 'message': '#0-this is message2'},
-            #4
+            # 4
             {'offset': '0', 'control': 'DONE', 'message': '#0-DONE'},
-            #5
+            # 5
             NoActiveProcesses()
         ]
         screen_mock = Mock()
         client.run_screen(screen_mock)
 
-        #1
+        # 1
         update_screen_call1 = call('#0-this is message1', screen_mock, client.screen_layout)
         self.assertTrue(update_screen_call1 in update_screen_patch.mock_calls)
-        #2
+        # 2
         refresh_screen_patch.assert_called_once_with(screen_mock)
-        #3
+        # 3
         update_screen_call2 = call('#0-this is message2', screen_mock, client.screen_layout)
         self.assertTrue(update_screen_call2 in update_screen_patch.mock_calls)
-        #4
+        # 4
         process_control_message_patch.assert_called_once_with('0', 'DONE')
-        #5
+        # 5
         logger_patch.info.assert_called_once_with('there are no more active processses - quitting')
 
     @patch('mpcurses.mpcurses.validate_screen_layout')

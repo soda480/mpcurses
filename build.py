@@ -36,9 +36,9 @@ name = 'mpcurses'
 authors = [
     Author('Emilio Reyes', 'emilio.reyes@intel.com')
 ]
-summary = 'A framework that exposes a simple set of APIs enabling multi-process integration with the curses screen painting library'
+summary = 'Mpcurses is an abstraction of the Python curses and multiprocessing libraries providing function execution and runtime visualization capabilities'
 url = 'https://github.com/soda480/mpcurses'
-version = '0.2.0'
+version = '0.2.1'
 default_task = [
     'clean',
     'analyze',
@@ -87,7 +87,7 @@ def cyclomatic_complexity(project, logger):
         command.use_argument('-a')
         result = command.run_on_production_source_files(logger)
         if len(result.error_report_lines) > 0:
-            logger.error('Errors while running radon, see {0}'.format(result.error_report_file))
+            logger.error(f'Errors while running radon, see {result.error_report_file}')
         for line in result.report_lines[:-1]:
             logger.debug(line.strip())
         if not result.report_lines:
@@ -96,4 +96,4 @@ def cyclomatic_complexity(project, logger):
         logger.info(average_complexity_line)
 
     except Exception as exception:
-        print('Unable to execute cyclomatic complexity due to ERROR: {}'.format(str(exception)))
+        print(f'Unable to execute cyclomatic complexity due to ERROR: {exception}')

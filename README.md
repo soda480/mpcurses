@@ -118,8 +118,6 @@ python examples/example#.py
 
 ### Projects using `mpcurses` ###
 
-Here are a few projects using mpcurses:
-
 * [edgexfoundry/sync-github-labels](https://github.com/edgexfoundry/cd-management/tree/git-label-sync) A script that synchronizes GitHub labels and milestones
 
 * [edgexfoundry/prune-github-tags](https://github.com/edgexfoundry/cd-management/tree/prune-github-tags) A script that prunes GitHub pre-release tags

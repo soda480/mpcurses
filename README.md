@@ -23,8 +23,6 @@ The main features are:
   * Display tables
   * Display lists
 
-Refer to [API Reference](https://github.com/soda480/mpcurses/wiki/API-Reference) for description of the API and the built-in screen layout directives.
-
 ### Installation ###
 ```bash
 pip install mpcurses

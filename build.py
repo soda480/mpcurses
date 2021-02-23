@@ -13,12 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-Mpcurses is an abstraction of the Python curses and multiprocessing libraries providing function execution and runtime visualization capabilities at scale. It contains a simple API to enable any Python function to be executed across one or more background processes and includes built-in directives to visualize the functions execution on a terminal screen. 
-The mpcurses API allows for seamless integration since it does not require the target function to include additional context about curses or multiprocessing. The target function does need to implement logging since log messages are the primary means of inter-process communication between the background processes executing the function and the main process updating the curses screen on the terminal.
-For examples checkout our home page: https://github.com/soda480/mpcurses
-"""
-
 from pybuilder.core import use_plugin
 from pybuilder.core import init
 from pybuilder.core import Author
@@ -34,19 +28,17 @@ use_plugin('python.distutils')
 
 name = 'mpcurses'
 authors = [
-    Author('Emilio Reyes', 'emilio.reyes@intel.com')
-]
+    Author('Emilio Reyes', 'emilio.reyes@intel.com')]
 summary = 'Mpcurses is an abstraction of the Python curses and multiprocessing libraries providing function execution and runtime visualization capabilities'
 url = 'https://github.com/soda480/mpcurses'
-version = '0.2.1'
+version = '0.2.2'
 default_task = [
     'clean',
     'analyze',
     'cyclomatic_complexity',
-    'package'
-]
+    'package']
 license = 'Apache License, Version 2.0'
-description = __doc__
+description = summary
 
 
 @init
@@ -61,6 +53,9 @@ def set_properties(project):
     project.set_property('flake8_ignore', 'E501, F401, F403, E114, E116')
     project.build_depends_on_requirements('requirements-build.txt')
     project.depends_on_requirements('requirements.txt')
+    project.set_property('distutils_readme_description', True)
+    project.set_property('distutils_description_overwrite', True)
+    project.set_property('distutils_upload_skip_existing', True)
     project.set_property('distutils_classifiers', [
         'Development Status :: 4 - Beta',
         'Environment :: Console',
@@ -75,8 +70,7 @@ def set_properties(project):
         'Topic :: Software Development :: Libraries',
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Topic :: System :: Networking',
-        'Topic :: System :: Systems Administration'
-    ])
+        'Topic :: System :: Systems Administration'])
 
 
 @task('cyclomatic_complexity', description='calculates and publishes cyclomatic complexity')

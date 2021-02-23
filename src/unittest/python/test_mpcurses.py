@@ -59,6 +59,7 @@ class TestMPcurses(unittest.TestCase):
         self.assertEqual(client.process_data, [{}])
         self.assertEqual(client.shared_data, {})
         self.assertEqual(client.processes_to_start, 1)
+        self.assertEqual(client.init_messages, [])
 
     def test__init_Should_SetDefaults_When_FunctionWrapped(self, *patches):
         function_mock = Mock(__name__='_queue_handler')
@@ -116,6 +117,15 @@ class TestMPcurses(unittest.TestCase):
         client.blink_process = process_mock
         client.stop_blink_process()
         process_mock.terminate.assert_called_once_with()
+
+    def test__stop_blink_process_Should_NotCallTerminate_When_NoBlinkScreenBlinkProces(self, *patches):
+        process_mock = Mock()
+        function_mock = Mock(__name__='_queue_handler')
+        client = MPcurses(function=function_mock)
+        client.blink_screen = None
+        client.blink_process = process_mock
+        client.stop_blink_process()
+        process_mock.terminate.assert_not_called()
 
     @patch('mpcurses.MPcurses.start_next_process')
     def test__start_processes_Should_CallStartNextProcess_When_Called(self, start_next_process_patch, *patches):
@@ -231,6 +241,8 @@ class TestMPcurses(unittest.TestCase):
         update_screen_patch.assert_not_called()
 
     @patch('mpcurses.mpcurses.validate_screen_layout')
+    @patch('mpcurses.MPcurses.start_blink_process')
+    @patch('mpcurses.mpcurses.initialize_screen')
     @patch('mpcurses.mpcurses.echo_to_screen')
     @patch('mpcurses.mpcurses.update_screen')
     def test__setup_screen_Should_CallExpected_When_Called(self, update_screen_patch, echo_to_screen_patch, *patches):
@@ -252,6 +264,8 @@ class TestMPcurses(unittest.TestCase):
         self.assertTrue(echo_to_screen_call2 in echo_to_screen_patch.mock_calls)
 
     @patch('mpcurses.mpcurses.validate_screen_layout')
+    @patch('mpcurses.MPcurses.start_blink_process')
+    @patch('mpcurses.mpcurses.initialize_screen')
     @patch('mpcurses.mpcurses.echo_to_screen')
     @patch('mpcurses.mpcurses.update_screen')
     def test__setup_screen_Should_CallExpected_When_NoInitMessages(self, update_screen_patch, echo_to_screen_patch, *patches):
@@ -265,6 +279,21 @@ class TestMPcurses(unittest.TestCase):
 
         echo_to_screen_call1 = call(screen_mock, {'range': '0-1'}, screen_layout_mock, offset=0)
         self.assertTrue(echo_to_screen_call1 in echo_to_screen_patch.mock_calls)
+
+    @patch('mpcurses.mpcurses.validate_screen_layout')
+    @patch('mpcurses.MPcurses.stop_blink_process')
+    @patch('mpcurses.mpcurses.finalize_screen')
+    @patch('mpcurses.mpcurses.update_screen')
+    def test__teardown_screen_Should_CallExpected_When_Called(self, update_screen_patch, finalize_screen_patch, *patches):
+        screen_mock = Mock()
+        function_mock = Mock(__name__='mockfunc')
+        screen_layout_mock = {'_screen': {}}
+        process_data = [{'range': '0-1'}, {'range': '2-3'}, {'range': '4-5'}]
+        client = MPcurses(function=function_mock, process_data=process_data, screen_layout=screen_layout_mock)
+        client.screen = screen_mock
+        client.teardown_screen()
+        update_screen_patch.assert_called()
+        finalize_screen_patch.assert_called_once_with(client.screen, client.screen_layout)
 
     def test__active_processes_empty_Should_ReturnExpected_When_Called(self, *patches):
         function_mock = Mock(__name__='mockfunc')
@@ -448,8 +477,7 @@ class TestMPcurses(unittest.TestCase):
         process_control_message_patch.assert_called_once_with('0', 'DONE')
 
     @patch('mpcurses.mpcurses.validate_screen_layout')
-    @patch('mpcurses.mpcurses.finalize_screen')
-    @patch('mpcurses.mpcurses.initialize_screen')
+    @patch('mpcurses.MPcurses.teardown_screen')
     @patch('mpcurses.MPcurses.setup_screen')
     @patch('mpcurses.MPcurses.start_processes')
     @patch('mpcurses.mpcurses.refresh_screen')
@@ -475,14 +503,15 @@ class TestMPcurses(unittest.TestCase):
         ]
         screen_mock = Mock()
         client.run_screen(screen_mock)
-
+        client.screen = screen_mock
+        print(f"***** {update_screen_patch.mock_calls}")
         # 1
-        update_screen_call1 = call('#0-this is message1', screen_mock, client.screen_layout)
+        update_screen_call1 = call('#0-this is message1', client.screen, client.screen_layout)
         self.assertTrue(update_screen_call1 in update_screen_patch.mock_calls)
         # 2
-        refresh_screen_patch.assert_called_once_with(screen_mock)
+        refresh_screen_patch.assert_called_once_with(client.screen)
         # 3
-        update_screen_call2 = call('#0-this is message2', screen_mock, client.screen_layout)
+        update_screen_call2 = call('#0-this is message2', client.screen, client.screen_layout)
         self.assertTrue(update_screen_call2 in update_screen_patch.mock_calls)
         # 4
         process_control_message_patch.assert_called_once_with('0', 'DONE')

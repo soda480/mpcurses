@@ -90,17 +90,11 @@ class MPcurses():
             logger.debug(f'decorating function {function.__name__} with queue_handler')
             self.function = queue_handler(function)
 
-        if not process_data:
-            process_data = [{}]
-        self.process_data = process_data
+        self.process_data = [{}] if process_data is None else process_data
 
-        if not shared_data:
-            shared_data = {}
-        self.shared_data = shared_data
+        self.shared_data = {} if shared_data is None else shared_data
 
-        if not processes_to_start:
-            processes_to_start = len(process_data)
-        self.processes_to_start = processes_to_start
+        self.processes_to_start = len(self.process_data) if processes_to_start is None else processes_to_start
 
         self.active_processes = OnDict(on_change=self.on_state_change)
 
@@ -116,7 +110,7 @@ class MPcurses():
             validate_screen_layout(len(self.process_data), self.processes_to_start, screen_layout)
         self.screen_layout = screen_layout
 
-        self.init_messages = init_messages
+        self.init_messages = [] if init_messages is None else init_messages
 
         if setup_process_queue:
             self.setup_process_queue()
@@ -247,16 +241,33 @@ class MPcurses():
             completed=self.completed_processes)
 
     def setup_screen(self):
-        """ update and echo data to screen
+        """ setup screen
         """
-        if self.init_messages:
-            for init_message in self.init_messages:
-                update_screen(init_message, self.screen, self.screen_layout)
+        initialize_screen(self.screen, self.screen_layout, len(self.process_data_offset))
 
+        # update screen with all initialization messages if they were provided
+        for message in self.init_messages:
+            update_screen(message, self.screen, self.screen_layout)
+
+        # echo all process data to screen
         for index, data in enumerate(self.process_data_offset):
             echo_to_screen(self.screen, data[1], self.screen_layout, offset=index)
 
+        # echo shared data to screen
         echo_to_screen(self.screen, self.shared_data, self.screen_layout)
+
+        self.start_blink_process()
+
+    def teardown_screen(self):
+        """ tear down screen
+        """
+        # update screen with end time
+        end_time = datetime.now().strftime('%m/%d/%Y %H:%M:%S')
+        update_screen(f'mpcurses: Ended:{end_time}', self.screen, self.screen_layout)
+
+        finalize_screen(self.screen, self.screen_layout)
+
+        self.stop_blink_process()
 
     def active_processes_empty(self):
         """ return True if active processes is empty else False
@@ -318,6 +329,7 @@ class MPcurses():
         """ run without screen
         """
         self.start_processes()
+
         while True:
             try:
                 message = self.get_message()
@@ -334,11 +346,9 @@ class MPcurses():
     def run_screen(self, screen):
         """ run with screen
         """
-        # set screen attribute so on_state_change method will have access to screen
+        # set screen attribute so instance methods have access to screen
         self.screen = screen
-        initialize_screen(screen, self.screen_layout, len(self.process_data_offset))
         self.setup_screen()
-        self.start_blink_process()
         self.start_processes()
 
         while True:
@@ -347,7 +357,7 @@ class MPcurses():
                 if message['control']:
                     self.process_control_message(message['offset'], message['control'])
                 else:
-                    update_screen(message['message'], screen, self.screen_layout)
+                    update_screen(message['message'], self.screen, self.screen_layout)
 
             except NoActiveProcesses:
                 logger.info('there are no more active processses - quitting')
@@ -355,12 +365,9 @@ class MPcurses():
 
             except Empty:
                 # queue.Empty exception is raised when nothing is in the multiprocessing message queue
-                refresh_screen(screen)
+                refresh_screen(self.screen)
 
-        end_time = datetime.now().strftime('%m/%d/%Y %H:%M:%S')
-        update_screen(f'mpcurses: Ended:{end_time}', screen, self.screen_layout)
-        finalize_screen(screen, self.screen_layout)
-        self.stop_blink_process()
+        self.teardown_screen()
 
     def execute(self):
         """ public execute api

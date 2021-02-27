@@ -92,17 +92,17 @@ MPcurses(
 Executing the code above results in the following:
 ![example](https://raw.githubusercontent.com/soda480/mpcurses/master/docs/images/example-multi.gif)
 
-Serveral [examples](/examples) are included to help introduce the mpcurses library. Note the functions contained in all the examples are Python functions that have no context about multiprocessing or curses, they simply perform a function on a given dataset. Mpcurses takes care of setting up the multiprocessing, configuring the curses screen and maintaining the thread-safe queues that are required for inter-process communication.
+Serveral [examples](https://github.com/soda480/mpcurses/tree/master/examples) are included to help introduce the mpcurses library. Note the functions contained in all the examples are Python functions that have no context about multiprocessing or curses, they simply perform a function on a given dataset. Mpcurses takes care of setting up the multiprocessing, configuring the curses screen and maintaining the thread-safe queues that are required for inter-process communication.
 
-#### [example1](/examples/example1.py)
+#### [example1](https://github.com/soda480/mpcurses/blob/master/examples/example1.py)
 Execute a function that processes a list of random items. The screen maintains indicators showing the number of items that have been processed. Two lists are maintained displaying the items that had errors and warnings.
 ![example1](https://raw.githubusercontent.com/soda480/mpcurses/master/docs/images/example1.gif)
 
-#### [example2](/examples/example2.py)
+#### [example2](https://github.com/soda480/mpcurses/blob/master/examples/example2.py)
 Execute a function that processes a list of random items. Execution is scaled across three processes where each is responsible for processing items for a particular group. The screen maintains indicators displaying the items that had errors and warnings for each group.
 ![example2](https://raw.githubusercontent.com/soda480/mpcurses/master/docs/images/example2.gif)
 
-#### [example3](/examples/example3.py)
+#### [example3](https://github.com/soda480/mpcurses/blob/master/examples/example3.py)
 Execute a function that calculates prime numbers for a set range of integers. Execution is scaled across 10 different processes where each process computes the primes on a different set of numbers. For example, the first process computes primes for the set 1-10K, second process 10K-20K, third process 20K-30K, etc. The screen keeps track of the number of prime numbers encountered for each set and maintains a progress bar for each process.
 ![example3](https://raw.githubusercontent.com/soda480/mpcurses/master/docs/images/example3.gif)
 

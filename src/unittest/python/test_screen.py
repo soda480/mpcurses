@@ -24,6 +24,7 @@ from mpcurses.screen import initialize_counter
 from mpcurses.screen import initialize_keep_count
 from mpcurses.screen import update_screen_status
 from mpcurses.screen import initialize_screen
+from mpcurses.screen import initialize_screen_offsets
 from mpcurses.screen import finalize_screen
 from mpcurses.screen import get_category_values
 from mpcurses.screen import sanitize_message
@@ -43,7 +44,8 @@ from mpcurses.screen import get_positions_to_update
 from mpcurses.screen import update_positions
 from mpcurses.screen import squash_table
 from mpcurses.screen import set_screen_defaults
-from mpcurses.screen import validate_screen_layout
+from mpcurses.screen import set_screen_defaults_processes
+from mpcurses.screen import validate_screen_layout_processes
 from mpcurses.screen import validate_screen_size
 from mpcurses.screen import blink
 
@@ -270,12 +272,34 @@ class TestScreen(unittest.TestCase):
         self.assertTrue(call2 in screen_mock.addstr.mock_calls)
         self.assertTrue(call3 in screen_mock.addstr.mock_calls)
 
-    @patch('mpcurses.screen.update_screen_status')
+    @patch('mpcurses.screen.curses.color_pair')
+    def test__update_screen_status_Should_CallExpected_When_GetProcessDataWithData(self, color_pair_patch, *patches):
+        screen_mock = Mock()
+        screen_mock.getmaxyx.return_value = (100, 200)
+        config_mock = {
+            'color': 0
+        }
+        update_screen_status(screen_mock, 'get-process-data', config_mock, data=' getting some data\nrest of\n docstr\n')
+        call1 = call(48, 79, 'Getting some data... this may take awhile', color_pair_patch.return_value)
+        self.assertTrue(call1 in screen_mock.addstr.mock_calls)
+
+    @patch('mpcurses.screen.curses.color_pair')
+    def test__update_screen_status_Should_CallExpected_When_GetProcessDataWithoutData(self, color_pair_patch, *patches):
+        screen_mock = Mock()
+        screen_mock.getmaxyx.return_value = (100, 200)
+        config_mock = {
+            'color': 0
+        }
+        update_screen_status(screen_mock, 'get-process-data', config_mock)
+        screen_mock.move.assert_called_once_with(48, 0)
+        screen_mock.clrtoeol.assert_called_once_with()
+
     @patch('mpcurses.screen.curses.curs_set')
-    @patch('mpcurses.screen.validate_screen_size')
     @patch('mpcurses.screen.initialize_colors')
-    @patch('mpcurses.screen.initialize_counter')
-    def test__initialize_screen_Should_CallExpected_When_CounterCategory(self, initialize_counter_patch, *patches):
+    @patch('mpcurses.screen.update_screen_status')
+    @patch('mpcurses.screen.validate_screen_size')
+    @patch('mpcurses.screen.set_screen_defaults')
+    def test__initialize_screen_Should_CallExpected_When_Called(self, set_screen_defaults_patch, validate_screen_size_patch, *patches):
         screen_mock = Mock()
         screen_layout_mock = {
             '_screen': {
@@ -283,15 +307,44 @@ class TestScreen(unittest.TestCase):
             '_counter_': {
             }
         }
-        initialize_screen(screen_mock, screen_layout_mock, 1)
+        initialize_screen(screen_mock, screen_layout_mock)
+        set_screen_defaults_patch.assert_called_once_with(screen_layout_mock)
+        validate_screen_size_patch.assert_called_once_with(screen_mock, screen_layout_mock)
+
+    @patch('mpcurses.screen.update_screen_status')
+    @patch('mpcurses.screen.validate_screen_layout_processes')
+    @patch('mpcurses.screen.set_screen_defaults_processes')
+    def test__initialize_screen_offsets_Should_CallExpected_When_Called(self, set_screen_defaults_processes_patch, validate_screen_layout_processes_patch, update_screen_status_patch, *patches):
+        screen_mock = Mock()
+        screen_layout_mock = {
+            '_screen': {
+            }
+        }
+        initialize_screen_offsets(screen_mock, screen_layout_mock, 100, 10)
+        set_screen_defaults_processes_patch.assert_called_once_with(100, 10, screen_layout_mock)
+        validate_screen_layout_processes_patch.assert_called_once_with(100, screen_layout_mock)
+        update_screen_status_patch.assert_called_once_with(screen_mock, 'process-update', screen_layout_mock['_screen'])
+
+    @patch('mpcurses.screen.update_screen_status')
+    @patch('mpcurses.screen.validate_screen_layout_processes')
+    @patch('mpcurses.screen.set_screen_defaults_processes')
+    @patch('mpcurses.screen.initialize_counter')
+    def test__initialize_screen_offsets_Should_CallExpected_When_CounterCategory(self, initialize_counter_patch, *patches):
+        screen_mock = Mock()
+        screen_layout_mock = {
+            '_screen': {
+            },
+            '_counter_': {
+            }
+        }
+        initialize_screen_offsets(screen_mock, screen_layout_mock, 1, 1)
         initialize_counter_patch.assert_called_once_with(1, screen_layout_mock)
 
     @patch('mpcurses.screen.update_screen_status')
-    @patch('mpcurses.screen.curses.curs_set')
-    @patch('mpcurses.screen.validate_screen_size')
-    @patch('mpcurses.screen.initialize_colors')
+    @patch('mpcurses.screen.validate_screen_layout_processes')
+    @patch('mpcurses.screen.set_screen_defaults_processes')
     @patch('mpcurses.screen.initialize_text')
-    def test__initialize_screen_Should_CallExpected_When_Text(self, initialize_text_patch, *patches):
+    def test__initialize_screen_offsets_Should_CallExpected_When_Text(self, initialize_text_patch, *patches):
         screen_mock = Mock()
         screen_layout_mock = {
             '_screen': {
@@ -300,14 +353,13 @@ class TestScreen(unittest.TestCase):
                 'text': 'Text Label'
             }
         }
-        initialize_screen(screen_mock, screen_layout_mock, 1)
+        initialize_screen_offsets(screen_mock, screen_layout_mock, 1, 1)
         initialize_text_patch.assert_called_once_with(1, 'category_with_text', screen_layout_mock, screen_mock)
 
     @patch('mpcurses.screen.update_screen_status')
-    @patch('mpcurses.screen.curses.curs_set')
-    @patch('mpcurses.screen.validate_screen_size')
-    @patch('mpcurses.screen.initialize_colors')
-    def test__initialize_screen_Should_AddKeepCountToCategory_When_List(self, *patches):
+    @patch('mpcurses.screen.validate_screen_layout_processes')
+    @patch('mpcurses.screen.set_screen_defaults_processes')
+    def test__initialize_screen_offsets_Should_AddKeepCountToCategory_When_List(self, *patches):
         screen_mock = Mock()
         screen_layout_mock = {
             '_screen': {
@@ -316,15 +368,14 @@ class TestScreen(unittest.TestCase):
                 'list': True
             }
         }
-        initialize_screen(screen_mock, screen_layout_mock, 1)
+        initialize_screen_offsets(screen_mock, screen_layout_mock, 1, 1)
         self.assertTrue(screen_layout_mock['category_with_list']['keep_count'])
 
     @patch('mpcurses.screen.update_screen_status')
-    @patch('mpcurses.screen.curses.curs_set')
-    @patch('mpcurses.screen.validate_screen_size')
-    @patch('mpcurses.screen.initialize_colors')
+    @patch('mpcurses.screen.validate_screen_layout_processes')
+    @patch('mpcurses.screen.set_screen_defaults_processes')
     @patch('mpcurses.screen.initialize_keep_count')
-    def test__initialize_screen_Should_CallExpected_When_KeepCount(self, initialize_keep_count_patch, *patches):
+    def test__initialize_screen_offsets_Should_CallExpected_When_KeepCount(self, initialize_keep_count_patch, *patches):
         screen_mock = Mock()
         screen_layout_mock = {
             '_screen': {
@@ -333,7 +384,7 @@ class TestScreen(unittest.TestCase):
                 'keep_count': True
             }
         }
-        initialize_screen(screen_mock, screen_layout_mock, 1)
+        initialize_screen_offsets(screen_mock, screen_layout_mock, 1, 1)
         initialize_keep_count_patch.assert_called_once_with('category_with_keep_count', 1, screen_layout_mock)
 
     @patch('mpcurses.screen.update_screen_status')
@@ -1202,13 +1253,11 @@ class TestScreen(unittest.TestCase):
     @patch('mpcurses.screen.sys.argv', ['scripta'])
     def test__set_screen_defaults_Should_SetDefaults_When_Called(self, *patches):
         screen_layout = {}
-        set_screen_defaults(10, 5, screen_layout)
+        set_screen_defaults(screen_layout)
         expected_screen_layout = {
             '_screen': {
                 'title': 'scripta',
-                'zfill': 2,
                 'color': 11,
-                'show_process_status': True,
                 'blink': True
             }
         }
@@ -1217,27 +1266,52 @@ class TestScreen(unittest.TestCase):
     def test__set_screen_defaults_Should_NotSetDefaults_When_Called(self, *patches):
         screen_layout = {
             '_screen': {
-                'title': 'scripta',
-                'zfill': 2,
-                'color': 11,
-                'show_process_status': True,
-                'blink': True
+                'title': 'scriptb',
+                'color': 12,
+                'blink': False
             }
         }
-        set_screen_defaults(10, 5, screen_layout)
+        set_screen_defaults(screen_layout)
         expected_screen_layout = {
             '_screen': {
-                'title': 'scripta',
-                'zfill': 2,
-                'color': 11,
-                'show_process_status': True,
-                'blink': True
+                'title': 'scriptb',
+                'color': 12,
+                'blink': False
             }
         }
         self.assertEqual(screen_layout, expected_screen_layout)
 
-    @patch('mpcurses.screen.set_screen_defaults')
-    def test__validate_screen_layout_RaiseException_When_MoreProcessesThanTableEntries(self, *patches):
+    def test__set_screen_defaults_processes_Should_SetDefaults_When_Called(self, *patches):
+        screen_layout = {
+            '_screen': {
+            }
+        }
+        set_screen_defaults_processes(10, 2, screen_layout)
+        expected_screen_layout = {
+            '_screen': {
+                'zfill': 2,
+                'show_process_status': True
+            }
+        }
+        self.assertEqual(screen_layout, expected_screen_layout)
+
+    def test__set_screen_defaults_processes_Should_NotSetDefaults_When_Called(self, *patches):
+        screen_layout = {
+            '_screen': {
+                'zfill': 2,
+                'show_process_status': False
+            }
+        }
+        set_screen_defaults_processes(10, 2, screen_layout)
+        expected_screen_layout = {
+            '_screen': {
+                'zfill': 2,
+                'show_process_status': False
+            }
+        }
+        self.assertEqual(screen_layout, expected_screen_layout)
+
+    def test__validate_screen_layout_processes_RaiseException_When_MoreProcessesThanTableEntries(self, *patches):
         screen_layout_mock = {
             'table': {
                 'rows': 30,
@@ -1245,11 +1319,10 @@ class TestScreen(unittest.TestCase):
             }
         }
         with self.assertRaises(Exception):
-            validate_screen_layout(100, 10, screen_layout_mock)
+            validate_screen_layout_processes(100, screen_layout_mock)
 
-    @patch('mpcurses.screen.set_screen_defaults')
     @patch('mpcurses.screen.squash_table')
-    def test__validate_screen_layout_Should_CallExpected_When_Squash(self, squash_table_patch, *patches):
+    def test__validate_screen_layout_processes_Should_CallExpected_When_Squash(self, squash_table_patch, *patches):
         screen_layout_mock = {
             'table': {
                 'rows': 30,
@@ -1257,12 +1330,11 @@ class TestScreen(unittest.TestCase):
                 'squash': True
             }
         }
-        validate_screen_layout(11, 11, screen_layout_mock)
+        validate_screen_layout_processes(11, screen_layout_mock)
         squash_table_patch.assert_called_once_with(screen_layout_mock, 19)
 
-    @patch('mpcurses.screen.set_screen_defaults')
     @patch('mpcurses.screen.squash_table')
-    def test__validate_screen_layout_Should_CallExpected_When_SquashFalse(self, squash_table_patch, *patches):
+    def test__validate_screen_layout_processes_Should_CallExpected_When_SquashFalse(self, squash_table_patch, *patches):
         screen_layout_mock = {
             'table': {
                 'rows': 30,
@@ -1270,12 +1342,11 @@ class TestScreen(unittest.TestCase):
                 'squash': False
             }
         }
-        validate_screen_layout(11, 11, screen_layout_mock)
+        validate_screen_layout_processes(11, screen_layout_mock)
         squash_table_patch.assert_not_called()
 
-    @patch('mpcurses.screen.set_screen_defaults')
     @patch('mpcurses.screen.squash_table')
-    def test__validate_screen_layout_Should_CallExpected_When_ProcessesGreaterThanRows(self, squash_table_patch, *patches):
+    def test__validate_screen_layout_processes_Should_CallExpected_When_ProcessesGreaterThanRows(self, squash_table_patch, *patches):
         screen_layout_mock = {
             'table': {
                 'rows': 30,
@@ -1283,26 +1354,24 @@ class TestScreen(unittest.TestCase):
                 'squash': True
             }
         }
-        validate_screen_layout(30, 30, screen_layout_mock)
+        validate_screen_layout_processes(30, screen_layout_mock)
         squash_table_patch.assert_not_called()
 
-    @patch('mpcurses.screen.set_screen_defaults')
     @patch('mpcurses.screen.squash_table')
-    def test__validate_screen_layout_Should_CallExpected_When_NoTable(self, squash_table_patch, *patches):
+    def test__validate_screen_layout_processes_Should_CallExpected_When_NoTable(self, squash_table_patch, *patches):
         screen_layout_mock = {
         }
-        validate_screen_layout(30, 30, screen_layout_mock)
+        validate_screen_layout_processes(30, screen_layout_mock)
         squash_table_patch.assert_not_called()
 
-    @patch('mpcurses.screen.set_screen_defaults')
     @patch('mpcurses.screen.squash_table')
-    def test__validate_screen_layout_Should_CallExpected_When_HorizontalTable(self, squash_table_patch, *patches):
+    def test__validate_screen_layout_processes_Should_CallExpected_When_HorizontalTable(self, squash_table_patch, *patches):
         screen_layout_mock = {
             'table': {
                 'orientation': 'horizontal'
             }
         }
-        validate_screen_layout(30, 30, screen_layout_mock)
+        validate_screen_layout_processes(30, screen_layout_mock)
 
     def test__validate_screen_size_Should_RaiseExeption_When_ScreenNotTallEnough(self, *patches):
         screen_mock = Mock()

@@ -43,45 +43,50 @@ class TestMPcurses(unittest.TestCase):
         """
         pass
 
-    @patch('mpcurses.MPcurses.setup_process_queue')
-    def test__init_Should_CallSetupProcessQueue_When_SetupProcessQueue(self, setup_process_queue_patch, *patches):
-        MPcurses(function=Mock(__name__='mockfunc'))
-        setup_process_queue_patch.assert_called_once_with()
-
-    @patch('mpcurses.mpcurses.validate_screen_layout')
-    def test__init_Should_CallValidateScreenLayout_When_ScreenLayout(self, validate_screen_layout_patch, *patches):
-        screen_layout_mock = {'_screen': {}}
-        MPcurses(function=Mock(__name__='mockfunc'), screen_layout=screen_layout_mock, setup_process_queue=False)
-        validate_screen_layout_patch.assert_called_once_with(1, 1, screen_layout_mock)
-
     def test__init_Should_SetDefaults_When_Called(self, *patches):
-        client = MPcurses(function=Mock(__name__='mockfunc'), setup_process_queue=False)
+        client = MPcurses(function=Mock(__name__='mockfunc'))
         self.assertEqual(client.process_data, [{}])
         self.assertEqual(client.shared_data, {})
         self.assertEqual(client.processes_to_start, 1)
         self.assertEqual(client.init_messages, [])
 
-    def test__init_Should_SetDefaults_When_FunctionWrapped(self, *patches):
-        function_mock = Mock(__name__='_queue_handler')
-        client = MPcurses(function=function_mock, setup_process_queue=False)
-        self.assertEqual(client.process_data, [{}])
-        self.assertEqual(client.shared_data, {})
-        self.assertEqual(client.processes_to_start, 1)
-        self.assertEqual(client.function, function_mock)
-
     @patch('mpcurses.mpcurses.queue_handler')
     def test__init_Should_SetDefaults_When_FunctionNotWrapped(self, queue_handler_patch, *patches):
         function_mock = Mock(__name__='mockfunc')
-        client = MPcurses(function=function_mock, setup_process_queue=False)
+        client = MPcurses(function=function_mock)
         self.assertEqual(client.process_data, [{}])
         self.assertEqual(client.shared_data, {})
         self.assertEqual(client.processes_to_start, 1)
         self.assertEqual(client.function, queue_handler_patch(function_mock))
 
-    def test__setup_process_queue_Should_AddToProcessQueue_When_Called(self, *patches):
+    def test__init__Should_RaiseException_When_ProcessDataAndGetProcessData(self, *patches):
+        function_mock = Mock(__name__='_queue_handler')
+        with self.assertRaises(Exception):
+            MPcurses(function_mock, process_data=[{}], get_process_data=Mock())
+
+    def test__init__Should_RaiseException_When_GetProcessDataNotCallable(self, *patches):
+        function_mock = Mock(__name__='_queue_handler')
+        get_process_data_mock = 'mock'
+        with self.assertRaises(Exception):
+            MPcurses(function_mock, get_process_data=get_process_data_mock)
+
+    def test__init__Should_RaiseException_When_GetProcessDataNoScreenLayout(self, *patches):
+        function_mock = Mock(__name__='_queue_handler')
+        get_process_data_mock = Mock()
+        with self.assertRaises(Exception):
+            MPcurses(function_mock, get_process_data=get_process_data_mock)
+
+    def test__init_Should_SetDefaults_When_GetProcessData(self, *patches):
+        function_mock = Mock(__name__='mockfunc')
+        get_process_data_mock = Mock()
+        client = MPcurses(function=function_mock, get_process_data=get_process_data_mock, screen_layout={'_screen': {}})
+        self.assertIsNone(client.process_data)
+        self.assertEqual(client.get_process_data, get_process_data_mock)
+
+    def test__populate_process_queue_Should_AddToProcessQueue_When_Called(self, *patches):
         process_data = [{'range': '0-1'}, {'range': '2-3'}, {'range': '4-5'}]
-        client = MPcurses(function=Mock(__name__='mockfunc'), process_data=process_data, setup_process_queue=False)
-        client.setup_process_queue()
+        client = MPcurses(function=Mock(__name__='mockfunc'), process_data=process_data)
+        client.populate_process_queue()
         self.assertEqual(client.process_queue.qsize(), 3)
 
     @patch('mpcurses.mpcurses.blink')
@@ -135,15 +140,12 @@ class TestMPcurses(unittest.TestCase):
         client.start_processes()
         self.assertEqual(len(start_next_process_patch.mock_calls), 2)
 
+    @patch('mpcurses.MPcurses.populate_process_queue')
     @patch('mpcurses.MPcurses.start_next_process')
     def test__start_processes_Should_CallStartNextProcess_When_ProcessesToStartGreaterThanProcessQueueSize(self, start_next_process_patch, *patches):
         function_mock = Mock(__name__='mockfunc')
         process_data = [{'range': '0-1'}, {'range': '2-3'}, {'range': '4-5'}]
         client = MPcurses(function=function_mock, process_data=process_data)
-        # remove all processes from queue
-        client.process_queue.get()
-        client.process_queue.get()
-        client.process_queue.get()
         client.start_processes()
         self.assertEqual(len(start_next_process_patch.mock_calls), 0)
 
@@ -156,6 +158,7 @@ class TestMPcurses(unittest.TestCase):
         function_mock = Mock(__name__='mockfunc')
         process_data = [{'range': '0-1'}, {'range': '2-3'}, {'range': '4-5'}]
         client = MPcurses(function=function_mock, process_data=process_data, shared_data='--shared-data--')
+        client.populate_process_queue()
         client.start_next_process()
 
         process_patch.assert_called_once_with(
@@ -182,6 +185,7 @@ class TestMPcurses(unittest.TestCase):
         function_mock = Mock(__name__='mockfunc')
         process_data = [{'range': '0-1'}, {'range': '2-3'}, {'range': '4-5'}]
         client = MPcurses(function=function_mock, process_data=process_data)
+        client.populate_process_queue()
         self.assertEqual(client.process_queue.qsize(), 3)
         client.purge_process_queue()
         self.assertTrue(client.process_queue.empty())
@@ -240,7 +244,46 @@ class TestMPcurses(unittest.TestCase):
         client.on_state_change(process_completed=False)
         update_screen_patch.assert_not_called()
 
-    @patch('mpcurses.mpcurses.validate_screen_layout')
+    @patch('mpcurses.mpcurses.update_screen_status')
+    def test__execute_get_process_data_Should_CallExpected_When_NoGetProcessData(self, update_screen_status_patch, *patches):
+        function_mock = Mock(__name__='mockfunc')
+        client = MPcurses(function=function_mock)
+        client.execute_get_process_data()
+        update_screen_status_patch.assert_not_called()
+
+    @patch('mpcurses.mpcurses.update_screen_status')
+    def test__execute_get_process_data_Should_CallExpected_When_GetProcessData(self, update_screen_status_patch, *patches):
+        function_mock = Mock(__name__='mockfunc')
+        get_process_data_mock = Mock(__doc__='getting data')
+        get_process_data_mock.return_value = [{'data': 1}, {'data': 2}]
+        client = MPcurses(function=function_mock, get_process_data=get_process_data_mock, screen_layout={'_screen': {}})
+        client.execute_get_process_data()
+        client.screen = None
+        call1 = call(client.screen, 'get-process-data', {}, data='getting data')
+        self.assertTrue(call1 in update_screen_status_patch.mock_calls)
+        get_process_data_mock.assert_called_once_with()
+        self.assertEqual(client.process_data, get_process_data_mock.return_value)
+        call2 = call(client.screen, 'get-process-data', {})
+        self.assertTrue(call2 in update_screen_status_patch.mock_calls)
+        self.assertEqual(client.processes_to_start, 2)
+
+    @patch('mpcurses.mpcurses.update_screen_status')
+    def test__execute_get_process_data_Should_CallExpected_When_GetProcessDataStartProcesses(self, update_screen_status_patch, *patches):
+        function_mock = Mock(__name__='mockfunc')
+        get_process_data_mock = Mock(__doc__='getting data')
+        get_process_data_mock.return_value = [{'data': 1}, {'data': 2}]
+        client = MPcurses(function=function_mock, get_process_data=get_process_data_mock, screen_layout={'_screen': {}}, processes_to_start=1, shared_data={'arg1': 'value1', 'arg2': 'value2'})
+        client.execute_get_process_data()
+        client.screen = None
+        call1 = call(client.screen, 'get-process-data', {}, data='getting data')
+        self.assertTrue(call1 in update_screen_status_patch.mock_calls)
+        get_process_data_mock.assert_called_once_with(arg1='value1', arg2='value2')
+        self.assertEqual(client.process_data, get_process_data_mock.return_value)
+        call2 = call(client.screen, 'get-process-data', {})
+        self.assertTrue(call2 in update_screen_status_patch.mock_calls)
+        self.assertEqual(client.processes_to_start, 1)
+
+    @patch('mpcurses.mpcurses.initialize_screen_offsets')
     @patch('mpcurses.MPcurses.start_blink_process')
     @patch('mpcurses.mpcurses.initialize_screen')
     @patch('mpcurses.mpcurses.echo_to_screen')
@@ -263,7 +306,7 @@ class TestMPcurses(unittest.TestCase):
         echo_to_screen_call2 = call(screen_mock, '--shared-data--', screen_layout_mock)
         self.assertTrue(echo_to_screen_call2 in echo_to_screen_patch.mock_calls)
 
-    @patch('mpcurses.mpcurses.validate_screen_layout')
+    @patch('mpcurses.mpcurses.initialize_screen_offsets')
     @patch('mpcurses.MPcurses.start_blink_process')
     @patch('mpcurses.mpcurses.initialize_screen')
     @patch('mpcurses.mpcurses.echo_to_screen')
@@ -280,7 +323,7 @@ class TestMPcurses(unittest.TestCase):
         echo_to_screen_call1 = call(screen_mock, {'range': '0-1'}, screen_layout_mock, offset=0)
         self.assertTrue(echo_to_screen_call1 in echo_to_screen_patch.mock_calls)
 
-    @patch('mpcurses.mpcurses.validate_screen_layout')
+    @patch('mpcurses.mpcurses.initialize_screen_offsets')
     @patch('mpcurses.MPcurses.stop_blink_process')
     @patch('mpcurses.mpcurses.finalize_screen')
     @patch('mpcurses.mpcurses.update_screen')
@@ -304,7 +347,7 @@ class TestMPcurses(unittest.TestCase):
         client.active_processes = {}
         self.assertTrue(client.active_processes_empty())
 
-    @patch('mpcurses.mpcurses.validate_screen_layout')
+    @patch('mpcurses.mpcurses.initialize_screen_offsets')
     def test__get_blink_message_Should_ReturnExpected_When_Empty(self, *patches):
         function_mock = Mock(__name__='_queue_handler')
         screen_layout = {
@@ -476,7 +519,7 @@ class TestMPcurses(unittest.TestCase):
         client.run()
         process_control_message_patch.assert_called_once_with('0', 'DONE')
 
-    @patch('mpcurses.mpcurses.validate_screen_layout')
+    @patch('mpcurses.mpcurses.validate_screen_layout_processes')
     @patch('mpcurses.MPcurses.teardown_screen')
     @patch('mpcurses.MPcurses.setup_screen')
     @patch('mpcurses.MPcurses.start_processes')
@@ -504,7 +547,6 @@ class TestMPcurses(unittest.TestCase):
         screen_mock = Mock()
         client.run_screen(screen_mock)
         client.screen = screen_mock
-        print(f"***** {update_screen_patch.mock_calls}")
         # 1
         update_screen_call1 = call('#0-this is message1', client.screen, client.screen_layout)
         self.assertTrue(update_screen_call1 in update_screen_patch.mock_calls)
@@ -518,7 +560,7 @@ class TestMPcurses(unittest.TestCase):
         # 5
         logger_patch.info.assert_called_once_with('there are no more active processses - quitting')
 
-    @patch('mpcurses.mpcurses.validate_screen_layout')
+    @patch('mpcurses.mpcurses.validate_screen_layout_processes')
     @patch('mpcurses.MPcurses.terminate_processes')
     @patch('mpcurses.mpcurses.sys')
     @patch('mpcurses.mpcurses.wrapper')

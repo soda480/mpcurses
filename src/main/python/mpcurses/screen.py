@@ -108,7 +108,7 @@ def initialize_keep_count(category, offsets, screen_layout):
         screen_layout[category]['_count'] = 0
 
 
-def update_screen_status(screen, state, config, running=None, queued=None, completed=None):
+def update_screen_status(screen, state, config, running=None, queued=None, completed=None, data=None):
     """ update screen status
     """
     height, width = screen.getmaxyx()
@@ -116,37 +116,39 @@ def update_screen_status(screen, state, config, running=None, queued=None, compl
     color = config['color']
 
     if state == 'initialize':
-        title = config['title']
+        text = config['title']
         screen.addstr(0, 0, ' ' * (width - 1), curses.color_pair(color))
-        screen.addstr(0, width - len(title) - 1, title, curses.color_pair(color))
-
+        screen.addstr(0, width - len(text) - 1, text, curses.color_pair(color))
     elif state == 'finalize':
-        qtext = '[Press q to exit]'
-        screen.addstr(0, 1, qtext, curses.color_pair(color))
-
+        text = '[Press q to exit]'
+        screen.addstr(0, 1, text, curses.color_pair(color))
     elif state == 'blink-on':
-        rtext = 'RUNNING'
-        screen.addstr(0, 1, rtext, curses.color_pair(color))
-
+        text = 'RUNNING'
+        screen.addstr(0, 1, text, curses.color_pair(color))
     elif state == 'blink-off':
-        rtext = 'RUNNING'
-        screen.addstr(0, 1, ' ' * len(rtext), curses.color_pair(color))
+        text = 'RUNNING'
+        screen.addstr(0, 1, ' ' * len(text), curses.color_pair(color))
+    elif state == 'get-process-data':
+        if data:
+            text = f'{data.splitlines()[0].strip().capitalize()}... this may take awhile'
+            y_pos = int((height // 2) - 2)
+            x_pos = int((width // 2) - (len(text) // 2) - len(text) % 2)
+            screen.addstr(y_pos, x_pos, text, curses.color_pair(color))
+        else:
+            y_pos = int((height // 2) - 2)
+            x_pos = 0
+            screen.move(y_pos, x_pos)
+            screen.clrtoeol()
 
     if state in ('initialize', 'process-update'):
-
-        if config['show_process_status']:
-
-            zfill = config['zfill']
-
+        if config.get('show_process_status'):
             if running is None:
                 running = 0
-
             if queued is None:
                 queued = 0
-
             if completed is None:
                 completed = 0
-
+            zfill = config['zfill']
             rtext = f'  Running: {str(running).zfill(zfill)}'
             screen.addstr(height - 4, 1, rtext, curses.color_pair(color))
             qtext = f'   Queued: {str(queued).zfill(zfill)}'
@@ -157,13 +159,26 @@ def update_screen_status(screen, state, config, running=None, queued=None, compl
     screen.refresh()
 
 
-def initialize_screen(screen, screen_layout, offsets):
+def initialize_screen(screen, screen_layout):
     """ initialize screen
     """
     logger.debug('initializing screen')
+
+    set_screen_defaults(screen_layout)
     validate_screen_size(screen, screen_layout)
+
     initialize_colors()
     curses.curs_set(0)
+    update_screen_status(screen, 'initialize', screen_layout['_screen'])
+
+
+def initialize_screen_offsets(screen, screen_layout, offsets, processes_to_start):
+    """ initialize screen offsets
+    """
+    logger.debug('initializing screen offsets')
+
+    set_screen_defaults_processes(offsets, processes_to_start, screen_layout)
+    validate_screen_layout_processes(offsets, screen_layout)
 
     for category, data in screen_layout.items():
         if category == '_counter_':
@@ -176,13 +191,14 @@ def initialize_screen(screen, screen_layout, offsets):
         if data.get('keep_count'):
             initialize_keep_count(category, offsets, screen_layout)
 
-    update_screen_status(screen, 'initialize', screen_layout['_screen'])
+    update_screen_status(screen, 'process-update', screen_layout['_screen'])
 
 
 def finalize_screen(screen, screen_layout):
     """ finalize screen
     """
     logger.debug('finalizing screen')
+
     update_screen_status(screen, 'finalize', screen_layout['_screen'])
     while True:
         char = screen.getch()
@@ -467,32 +483,40 @@ def squash_table(screen_layout, delta):
     update_positions(screen_layout, positions)
 
 
-def set_screen_defaults(processes, processes_to_start, screen_layout):
+def set_screen_defaults(screen_layout):
     """ set screen defaults
     """
+    logger.debug('setting screen defaults')
+
     if '_screen' not in screen_layout:
         screen_layout['_screen'] = {}
 
     if 'title' not in screen_layout['_screen']:
         screen_layout['_screen']['title'] = sys.argv[0]
 
-    if 'zfill' not in screen_layout['_screen']:
-        screen_layout['_screen']['zfill'] = len(str(processes))
-
     if 'color' not in screen_layout['_screen']:
         screen_layout['_screen']['color'] = 11
-
-    if 'show_process_status' not in screen_layout['_screen']:
-        screen_layout['_screen']['show_process_status'] = processes_to_start < processes
 
     if 'blink' not in screen_layout['_screen']:
         screen_layout['_screen']['blink'] = True
 
 
-def validate_screen_layout(processes, processes_to_start, screen_layout):
+def set_screen_defaults_processes(processes, processes_to_start, screen_layout):
+    """ set screen defaults
+    """
+    logger.debug('setting screen defaults processes')
+
+    if 'zfill' not in screen_layout['_screen']:
+        screen_layout['_screen']['zfill'] = len(str(processes))
+
+    if 'show_process_status' not in screen_layout['_screen']:
+        screen_layout['_screen']['show_process_status'] = processes_to_start < processes
+
+
+def validate_screen_layout_processes(processes, screen_layout):
     """ validate screen layout
     """
-    set_screen_defaults(processes, processes_to_start, screen_layout)
+    logger.debug('validating screen layout processes')
 
     table = screen_layout.get('table')
     if not table:
@@ -513,6 +537,8 @@ def validate_screen_layout(processes, processes_to_start, screen_layout):
 def validate_screen_size(screen, screen_layout):
     """ validate current screen size is large enough for screen layout
     """
+    logger.debug('validating screen size')
+
     screen_height, screen_width = screen.getmaxyx()
     max_y_pos = 0
     max_x_pos = 0

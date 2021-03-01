@@ -24,11 +24,12 @@ from queue import Queue as SimpleQueue
 from queue import Empty
 
 from .screen import initialize_screen
+from .screen import initialize_screen_offsets
 from .screen import finalize_screen
 from .screen import update_screen
 from .screen import echo_to_screen
 from .screen import refresh_screen
-from .screen import validate_screen_layout
+from .screen import validate_screen_layout_processes
 from .screen import update_screen_status
 from .screen import blink
 from .handler import queue_handler
@@ -77,28 +78,38 @@ class OnDict(dict):
 class MPcurses():
     """ mpcurses process pool
     """
-    def __init__(self, function, *, process_data=None, shared_data=None, processes_to_start=None, screen_layout=None, init_messages=None, setup_process_queue=True):
+    def __init__(self, function, *, process_data=None, shared_data=None, processes_to_start=None, screen_layout=None, init_messages=None, get_process_data=None):
         """ MPCstate constructor
         """
-        if getattr(function, '__name__', None) == '_queue_handler':
-            # enable backwards compatibility for use cases where
-            # function was already decorated with queue_handler
-            # NOTE: this does not work for functions with multiple decorators
-            logger.debug('function is already decorated with queue_handler')
-            self.function = function
-        else:
-            logger.debug(f'decorating function {function.__name__} with queue_handler')
-            self.function = queue_handler(function)
+        if process_data and get_process_data:
+            raise ValueError('process_data and get_process_data values cannot both be set')
 
-        self.process_data = [{}] if process_data is None else process_data
+        if get_process_data and not callable(get_process_data):
+            raise ValueError('get_process_data value must be a callable function')
+
+        if get_process_data and not screen_layout:
+            raise ValueError('get_process_data can only be set if screen_layout value is provided')
+
+        logger.debug(f'decorating function {function.__name__} with queue_handler')
+        self.function = queue_handler(function)
+
+        self.screen_layout = screen_layout
+
+        self.processes_to_start = processes_to_start
+
+        self.get_process_data = get_process_data
+
+        if self.get_process_data:
+            self.process_data = None
+        else:
+            # things we can set when get_process_data is not specified
+            self.process_data = [{}] if process_data is None else process_data
+            if not self.processes_to_start:
+                self.processes_to_start = len(self.process_data)
 
         self.shared_data = {} if shared_data is None else shared_data
 
-        self.processes_to_start = len(self.process_data) if processes_to_start is None else processes_to_start
-
         self.active_processes = OnDict(on_change=self.on_state_change)
-
-        self.process_data_offset = [(self.process_data.index(item), item) for item in self.process_data]
 
         self.message_queue = Queue()
 
@@ -106,14 +117,7 @@ class MPcurses():
 
         self.process_queue = SimpleQueue()
 
-        if screen_layout:
-            validate_screen_layout(len(self.process_data), self.processes_to_start, screen_layout)
-        self.screen_layout = screen_layout
-
         self.init_messages = [] if init_messages is None else init_messages
-
-        if setup_process_queue:
-            self.setup_process_queue()
 
         self.completed_processes = 0
 
@@ -128,15 +132,6 @@ class MPcurses():
         self.blink_queue = None
         if self.blink_screen:
             self.blink_queue = Queue()
-
-    def setup_process_queue(self):
-        """ return queue containing data for each process
-        """
-        logger.debug('populating the process queue')
-        for item in self.process_data_offset:
-            logger.debug(f'adding {item} to the process queue')
-            self.process_queue.put(item)
-        logger.debug(f'added {self.process_queue.qsize()} items to the process queue')
 
     def start_blink_process(self):
         """ start blink process
@@ -156,9 +151,21 @@ class MPcurses():
             self.blink_process.terminate()
             logger.debug('terminated blink process')
 
+    def populate_process_queue(self):
+        """ populate process queue from process data offset
+        """
+        logger.debug('populating the process queue')
+        for offset, data in enumerate(self.process_data):
+            item = (offset, data)
+            logger.debug(f'adding {item} to the process queue')
+            self.process_queue.put(item)
+        logger.debug(f'added {self.process_queue.qsize()} items to the process queue')
+
     def start_processes(self):
         """ start processes
         """
+        self.populate_process_queue()
+
         logger.debug(f'there are {self.process_queue.qsize()} items in the process queue')
         logger.debug(f'starting {self.processes_to_start} background processes')
         for _ in range(self.processes_to_start):
@@ -180,8 +187,7 @@ class MPcurses():
             kwargs={
                 'message_queue': self.message_queue,
                 'offset': offset,
-                'result_queue': self.result_queue
-            })
+                'result_queue': self.result_queue})
         # logger.debug(f'starting background process at offset {offset} with data {process_data}')
         process.start()
         logger.info(f'started background process at offset {offset} with process id {process.pid}')
@@ -240,21 +246,38 @@ class MPcurses():
             queued=self.process_queue.qsize(),
             completed=self.completed_processes)
 
+    def execute_get_process_data(self):
+        """ execute get_process_data function
+        """
+        if self.get_process_data:
+            doc = self.get_process_data.__doc__
+            update_screen_status(self.screen, 'get-process-data', self.screen_layout['_screen'], data=doc)
+            kwargs = self.shared_data if self.shared_data else {}
+            self.process_data = self.get_process_data(**kwargs)
+            update_screen_status(self.screen, 'get-process-data', self.screen_layout['_screen'])
+            if not self.processes_to_start:
+                self.processes_to_start = len(self.process_data)
+
     def setup_screen(self):
         """ setup screen
         """
-        initialize_screen(self.screen, self.screen_layout, len(self.process_data_offset))
+        initialize_screen(self.screen, self.screen_layout)
+
+        self.execute_get_process_data()
+
+        # initialize screen with offsets
+        initialize_screen_offsets(self.screen, self.screen_layout, len(self.process_data), self.processes_to_start)
 
         # update screen with all initialization messages if they were provided
         for message in self.init_messages:
             update_screen(message, self.screen, self.screen_layout)
 
-        # echo all process data to screen
-        for index, data in enumerate(self.process_data_offset):
-            echo_to_screen(self.screen, data[1], self.screen_layout, offset=index)
-
         # echo shared data to screen
         echo_to_screen(self.screen, self.shared_data, self.screen_layout)
+
+        # echo all process data to screen
+        for offset, data in enumerate(self.process_data):
+            echo_to_screen(self.screen, data, self.screen_layout, offset=offset)
 
         self.start_blink_process()
 
@@ -292,10 +315,7 @@ class MPcurses():
             # if blink is enabled then process blink message first
             blink_message = self.get_blink_message()
             if blink_message:
-                update_screen_status(
-                    self.screen,
-                    blink_message,
-                    self.screen_layout['_screen'])
+                update_screen_status(self.screen, blink_message, self.screen_layout['_screen'])
 
         offset = None
         control = None
@@ -307,8 +327,7 @@ class MPcurses():
         return {
             'offset': offset,
             'control': control,
-            'message': message
-        }
+            'message': message}
 
     def process_control_message(self, offset, control):
         """ process control message

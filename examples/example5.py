@@ -20,7 +20,9 @@ def get_hex():
         return uuid.uuid4().hex.upper()
 
 
-def get_servers(bays):
+def get_servers(bays=None):
+    """ getting server data from enclosure
+    """
     servers = []
     for bay in bays:
         servers.append({
@@ -28,7 +30,23 @@ def get_servers(bays):
             'firmware version': get_current_firmware(),
             'servername': 'srv{}.company.com'.format(get_hex()[0:6]),
         })
+    sleep(5)
     return servers
+
+def get_servers2(**kwargs):
+    """ getting server data from enclosure if being passed as get_process_data value to MPcurses then should accept **kwargs as argument
+    """
+    bays = range(1, 17)
+    servers = []
+    for bay in bays:
+        servers.append({
+            'bay': str(bay).zfill(2),
+            'firmware version': get_current_firmware(),
+            'servername': 'srv{}.company.com'.format(get_hex()[0:6]),
+        })
+    sleep(5)
+    return servers
+
 
 
 def simulate_error(value, message):
@@ -96,15 +114,15 @@ def get_current_firmware():
 def main():
     """ main program
     """
-    bays = range(1,17)
-    process_data = get_servers(bays)
-    MPcurses(
+    mpcurses = MPcurses(
         function=update_firmware,
-        process_data=process_data,
+        get_process_data=get_servers,
         processes_to_start=5,
-        screen_layout=get_screen_layout()).execute()
+        screen_layout=get_screen_layout(),
+        shared_data={'bays': range(1, 17)})
+    mpcurses.execute()
 
-    if any([process['result'] for process in process_data]):
+    if any([process['result'] for process in mpcurses.process_data]):
         sys.exit(-1)
 
 

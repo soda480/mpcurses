@@ -20,9 +20,11 @@ def get_hex():
         return uuid.uuid4().hex.upper()
 
 
-def get_servers(bays=None):
+def get_servers(**kwargs):
     """ getting server data from enclosure
     """
+    logger.debug(kwargs)
+    bays = kwargs['bays']
     servers = []
     for bay in bays:
         servers.append({
@@ -31,7 +33,8 @@ def get_servers(bays=None):
             'servername': 'srv{}.company.com'.format(get_hex()[0:6]),
         })
     sleep(5)
-    return servers
+    kwargs['derived_key'] = 'derived_value'
+    return (servers, kwargs)
 
 def get_servers2(**kwargs):
     """ getting server data from enclosure if being passed as get_process_data value to MPcurses then should accept **kwargs as argument
@@ -45,7 +48,7 @@ def get_servers2(**kwargs):
             'servername': 'srv{}.company.com'.format(get_hex()[0:6]),
         })
     sleep(5)
-    return servers
+    return (servers, kwargs)
 
 
 
@@ -111,9 +114,23 @@ def get_current_firmware():
     return random.choice(['1.01', '2.01', '2.00', '2.02', '2.03', '2.04', '2.05', '2.06'])
 
 
+def configure_logging():
+    """ configure logging
+    """
+    rootLogger = logging.getLogger()
+    # must be set to this level so handlers can filter from this level
+    rootLogger.setLevel(logging.DEBUG)
+    file_handler = logging.FileHandler('example5.log')
+    file_formatter = logging.Formatter("%(asctime)s %(processName)s %(name)s [%(funcName)s] %(levelname)s %(message)s")
+    file_handler.setFormatter(file_formatter)
+    file_handler.setLevel(logging.DEBUG)
+    rootLogger.addHandler(file_handler)
+
+
 def main():
     """ main program
     """
+    configure_logging()
     mpcurses = MPcurses(
         function=update_firmware,
         get_process_data=get_servers,

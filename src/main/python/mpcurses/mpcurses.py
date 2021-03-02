@@ -118,6 +118,8 @@ class MPcurses():
         self.process_queue = SimpleQueue()
 
         self.init_messages = [] if init_messages is None else init_messages
+        start_time = datetime.now().strftime('%m/%d/%Y %H:%M:%S')
+        self.init_messages.append(f'mpcurses: Started:{start_time}')
 
         self.completed_processes = 0
 
@@ -188,7 +190,6 @@ class MPcurses():
                 'message_queue': self.message_queue,
                 'offset': offset,
                 'result_queue': self.result_queue})
-        # logger.debug(f'starting background process at offset {offset} with data {process_data}')
         process.start()
         logger.info(f'started background process at offset {offset} with process id {process.pid}')
         # update active_processes dictionary with process meta-data for the process offset
@@ -250,10 +251,11 @@ class MPcurses():
         """ execute get_process_data function
         """
         if self.get_process_data:
+            logger.debug(f'executing get process data method: {self.get_process_data.__name__}')
             doc = self.get_process_data.__doc__
             update_screen_status(self.screen, 'get-process-data', self.screen_layout['_screen'], data=doc)
             kwargs = self.shared_data if self.shared_data else {}
-            self.process_data = self.get_process_data(**kwargs)
+            self.process_data, self.shared_data = self.get_process_data(**kwargs)
             update_screen_status(self.screen, 'get-process-data', self.screen_layout['_screen'])
             if not self.processes_to_start:
                 self.processes_to_start = len(self.process_data)
@@ -269,13 +271,16 @@ class MPcurses():
         initialize_screen_offsets(self.screen, self.screen_layout, len(self.process_data), self.processes_to_start)
 
         # update screen with all initialization messages if they were provided
+        logger.debug('updating screen with init messages')
         for message in self.init_messages:
             update_screen(message, self.screen, self.screen_layout)
 
         # echo shared data to screen
+        logger.debug('echoing shared data to screen')
         echo_to_screen(self.screen, self.shared_data, self.screen_layout)
 
         # echo all process data to screen
+        logger.debug('echoing process data to screen')
         for offset, data in enumerate(self.process_data):
             echo_to_screen(self.screen, data, self.screen_layout, offset=offset)
 

@@ -43,12 +43,14 @@ class TestMPcurses(unittest.TestCase):
         """
         pass
 
-    def test__init_Should_SetDefaults_When_Called(self, *patches):
+    @patch('mpcurses.mpcurses.datetime')
+    def test__init_Should_SetDefaults_When_Called(self, datetime_patch, *patches):
+        datetime_patch.now.return_value.strftime.return_value = 'current-time'
         client = MPcurses(function=Mock(__name__='mockfunc'))
         self.assertEqual(client.process_data, [{}])
         self.assertEqual(client.shared_data, {})
         self.assertEqual(client.processes_to_start, 1)
-        self.assertEqual(client.init_messages, [])
+        self.assertEqual(client.init_messages, ['mpcurses: Started:current-time'])
 
     @patch('mpcurses.mpcurses.queue_handler')
     def test__init_Should_SetDefaults_When_FunctionNotWrapped(self, queue_handler_patch, *patches):
@@ -254,15 +256,16 @@ class TestMPcurses(unittest.TestCase):
     @patch('mpcurses.mpcurses.update_screen_status')
     def test__execute_get_process_data_Should_CallExpected_When_GetProcessData(self, update_screen_status_patch, *patches):
         function_mock = Mock(__name__='mockfunc')
-        get_process_data_mock = Mock(__doc__='getting data')
-        get_process_data_mock.return_value = [{'data': 1}, {'data': 2}]
+        get_process_data_mock = Mock(__name__='get_my_process_data', __doc__='getting data')
+        get_process_data_mock.return_value = ([{'data': 1}, {'data': 2}], {'key1', 'value1'})
         client = MPcurses(function=function_mock, get_process_data=get_process_data_mock, screen_layout={'_screen': {}})
         client.execute_get_process_data()
         client.screen = None
         call1 = call(client.screen, 'get-process-data', {}, data='getting data')
         self.assertTrue(call1 in update_screen_status_patch.mock_calls)
         get_process_data_mock.assert_called_once_with()
-        self.assertEqual(client.process_data, get_process_data_mock.return_value)
+        self.assertEqual(client.process_data, get_process_data_mock.return_value[0])
+        self.assertEqual(client.shared_data, get_process_data_mock.return_value[1])
         call2 = call(client.screen, 'get-process-data', {})
         self.assertTrue(call2 in update_screen_status_patch.mock_calls)
         self.assertEqual(client.processes_to_start, 2)
@@ -270,15 +273,16 @@ class TestMPcurses(unittest.TestCase):
     @patch('mpcurses.mpcurses.update_screen_status')
     def test__execute_get_process_data_Should_CallExpected_When_GetProcessDataStartProcesses(self, update_screen_status_patch, *patches):
         function_mock = Mock(__name__='mockfunc')
-        get_process_data_mock = Mock(__doc__='getting data')
-        get_process_data_mock.return_value = [{'data': 1}, {'data': 2}]
+        get_process_data_mock = Mock(__name__='get_my_process_data', __doc__='getting data')
+        get_process_data_mock.return_value = ([{'data': 1}, {'data': 2}], {'arg1': 'value1', 'arg2': 'value2', 'arg3': 'value3'})
         client = MPcurses(function=function_mock, get_process_data=get_process_data_mock, screen_layout={'_screen': {}}, processes_to_start=1, shared_data={'arg1': 'value1', 'arg2': 'value2'})
         client.execute_get_process_data()
         client.screen = None
         call1 = call(client.screen, 'get-process-data', {}, data='getting data')
         self.assertTrue(call1 in update_screen_status_patch.mock_calls)
         get_process_data_mock.assert_called_once_with(arg1='value1', arg2='value2')
-        self.assertEqual(client.process_data, get_process_data_mock.return_value)
+        self.assertEqual(client.process_data, get_process_data_mock.return_value[0])
+        self.assertEqual(client.shared_data, get_process_data_mock.return_value[1])
         call2 = call(client.screen, 'get-process-data', {})
         self.assertTrue(call2 in update_screen_status_patch.mock_calls)
         self.assertEqual(client.processes_to_start, 1)

@@ -16,8 +16,6 @@
 from pybuilder.core import use_plugin
 from pybuilder.core import init
 from pybuilder.core import Author
-from pybuilder.core import task
-from pybuilder.pluginhelper.external_command import ExternalCommandBuilder
 
 use_plugin('python.core')
 use_plugin('python.unittest')
@@ -25,17 +23,19 @@ use_plugin('python.install_dependencies')
 use_plugin('python.flake8')
 use_plugin('python.coverage')
 use_plugin('python.distutils')
+use_plugin('pypi:pybuilder_radon', '~=0.1.2')
+use_plugin('pypi:pybuilder_bandit', '~=0.1.3')
 
 name = 'mpcurses'
-authors = [
-    Author('Emilio Reyes', 'emilio.reyes@intel.com')]
+authors = [Author('Emilio Reyes', 'emilio.reyes@intel.com')]
 summary = 'Mpcurses is an abstraction of the Python curses and multiprocessing libraries providing function execution and runtime visualization capabilities'
 url = 'https://github.com/soda480/mpcurses'
-version = '0.2.4'
+version = '0.2.5'
 default_task = [
     'clean',
     'analyze',
-    'cyclomatic_complexity',
+    'radon',
+    'bandit',
     'package']
 license = 'Apache License, Version 2.0'
 description = summary
@@ -71,23 +71,6 @@ def set_properties(project):
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Topic :: System :: Networking',
         'Topic :: System :: Systems Administration'])
-
-
-@task('cyclomatic_complexity', description='calculates and publishes cyclomatic complexity')
-def cyclomatic_complexity(project, logger):
-    try:
-        command = ExternalCommandBuilder('radon', project)
-        command.use_argument('cc')
-        command.use_argument('-a')
-        result = command.run_on_production_source_files(logger)
-        if len(result.error_report_lines) > 0:
-            logger.error(f'Errors while running radon, see {result.error_report_file}')
-        for line in result.report_lines[:-1]:
-            logger.debug(line.strip())
-        if not result.report_lines:
-            return
-        average_complexity_line = result.report_lines[-1].strip()
-        logger.info(average_complexity_line)
-
-    except Exception as exception:
-        print(f'Unable to execute cyclomatic complexity due to ERROR: {exception}')
+    project.set_property('radon_break_build_average_complexity_threshold', 3.6)
+    project.set_property('radon_break_build_complexity_threshold', 14)
+    project.set_property('bandit_break_build', True)

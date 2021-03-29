@@ -30,7 +30,7 @@ name = 'mpcurses'
 authors = [Author('Emilio Reyes', 'emilio.reyes@intel.com')]
 summary = 'Mpcurses is an abstraction of the Python curses and multiprocessing libraries providing function execution and runtime visualization capabilities'
 url = 'https://github.com/soda480/mpcurses'
-version = '0.2.5'
+version = '0.2.6'
 default_task = [
     'clean',
     'analyze',

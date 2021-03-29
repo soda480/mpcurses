@@ -25,6 +25,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+VALUE_LENGTH = 103
+
+
 def initialize_colors():
     """ initialize colors
     """
@@ -222,13 +225,13 @@ def get_category_values(message, offset, screen_layout):
                 if match.groups():
                     value = match.group('value')
                     length = len(value)
-                    width = data.get('width', 103)
+                    max_length = data.get('length', VALUE_LENGTH)
 
-                    if length > width:
-                        value = f'{value[0:width - 3]}...'
+                    if length > max_length:
+                        value = f'{value[0:max_length - 3]}...'
 
                     if data.get('right_justify'):
-                        spaces = ' ' * (width - length)
+                        spaces = ' ' * (max_length - length)
                         value = f'{spaces}{value}'
 
                 original_value = value

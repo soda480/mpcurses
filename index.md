@@ -1,37 +1,64 @@
-## Welcome to GitHub Pages
+# class mpcurses.MPcurses
 
-You can use the [editor on GitHub](https://github.com/soda480/mpcurses/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
+## MPcurses.__init__(...)
+Class constuctor
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+### function
+> **callable** - The target function to execute.
+> 
+> If you intend to use MPcurses screen capabilities then ensure the function implements logging. In general, to display data to the screen you need to add a log statement for the data item and define a corresponding category for it in the **screen_layout**. MPcurses will create a log handler that will send all log messages to a thread-safe queue, upon execution it will start a background Process to execute the function, as the messages get emitted and queued, the main process will read messages off of the queue and update the curses screen according to the categories you define in **screen_layout**.
+> 
+> The target function must accept two arguments; the first argument for **process_data** and the second argument for **shared_data**. 
+> 
+> This parameter is required.
 
-### Markdown
+### process_data
+> **list** - A list of dictionaries. Each individual dictionary will be passed to the target **function** for the respective process being executed. Thus the data defined in the dictionary should be intended to the process executing it. This is necessary if you wish to scale the execution of the target **function** across multiple processes, where each process is responsible for executing the target function on a unique set of data. The total number of elements in the list represent the total number of processes that will be executed. 
+> 
+> For example, specifying a value of: `[{'name': 'one'}, {'name': 'two'}, {'name': 'three'}]`
+> 
+> Will result in the following:
+> * A total of 3 processes will be executed
+> * Process #1 will execute the target function with first argument of: `{'name': 'one'}`
+> * Process #2 will execute the target function with first argument of: `{'name': 'two'}`
+> * Process #3 will execute the target function with first argument of: `{'name': 'three'}`
+> 
+> If not specified a single process will be executed for the target **function** specified.
+> 
+> If the **function** returns an object then the return value will be added to the `result` key in the respective dictionary. This will happen after all processes complete, for example: `[{'name': 'one', 'result': 1}, {'name': 'two', 'result': 2}, {'name': 'three', 'result': 3}]`
+> 
+> Default value: **[{}]**
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+### shared_data
+> **dict** - A dictionary of key value pairs that will be passed to the target **function** for every process being executed. Thus if you have a set of data that all processes should be know then assign that data to this parameter; all processes will receive this data.
+> 
+> Default value: **{}**
 
-```markdown
-Syntax highlighted code block
+### processes_to_start
+> **int** - The number of processes to execute simultaneously. If this number is less than the number of elements in the **process_data** list, then the remaining elements in the list will be queued for execution. As a process completes the next element will be popped from the queue and executed. This number should not be greater than the number of elements in the **process_data** list.
+> 
+> If no value is specified and **process_data** is provided, then this number will default to the length of the **process_data** list
+> 
+> Default value: len(**process_data**) if **process_data** is provided
 
-# Header 1
-## Header 2
-### Header 3
+### screen_layout
+> **dict** - A dictionary describing the layout and elements of the curses screen. Refer to the [screen layout](screen_layout.md) directives for the elements that can be configured.
+> 
+> Default value: **{}**
 
-- Bulleted
-- List
+### init_messages
+> **list** - A list of strings, each string represents a message that MPcurses will process and update the screen upon execution. MPcurses will automatically add the start time as an init message in the form of `%m/%d/%Y %H:%M:%S`.
+> 
+> Default value: **[]**
 
-1. Numbered
-2. List
+### get_process_data
+> **callable** - A function to call that will set the value of **process_data**. This is useful if the value of **process_data** takes some time to compute. The function must include a docstr describing the purpose of the function. Upon execution, the value of the function's docstring will be displayed in the curses screen while it is being executed.
+> 
+> The function must accept as a first argument a dictionary, if the function requires arguments, then specify them in **shared_data** as execution will pass this to the function. 
+> 
+> Note that **get_process_data** and **process_data** are mutually exclusive and cannot both be set at the same time; setting both will incur a ValueError. If setting this value then you must all set **screen_layout**.
+> 
+> Default value: **None**
 
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
-```
-
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/soda480/mpcurses/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://support.github.com/contact) and we’ll help you sort it out.
+## MPcurses.execute()
+Initiate execution of the MPcurses instance.

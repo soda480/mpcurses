@@ -81,7 +81,8 @@ class TestHandler(unittest.TestCase):
         message_queue_mock = Mock()
         result = queue_handler(function_mock)(offset=3, message_queue=message_queue_mock)
         self.assertEqual(result, function_mock.return_value)
-        message_queue_mock.put.assert_called_once_with('#3-DONE')
+        self.assertTrue(call('#3-execution of fn1 offset 3 ended') in message_queue_mock.put.mock_calls)
+        self.assertTrue(call('#3-DONE') in message_queue_mock.put.mock_calls)
 
     def test__queue_handler_Should_AddErrorMessagesToMessageQueue_When_FunctionThrowsException(self, *patches):
         function_mock = Mock(__name__='fn1')
@@ -90,8 +91,9 @@ class TestHandler(unittest.TestCase):
         queue_handler(function_mock)(offset=3, message_queue=message_queue_mock)
         call1 = call('#3-ERROR: function exception')
         call2 = call('#3-ERROR')
+        call4 = call('#3-execution of fn1 offset 3 ended')
         call3 = call('#3-DONE')
-        self.assertEqual(message_queue_mock.put.mock_calls, [call1, call2, call3])
+        self.assertEqual(message_queue_mock.put.mock_calls, [call1, call2, call4, call3])
 
     def test__queue_handler_Should_AddExceptionToResultQueue_When_FunctionThrowsException(self, *patches):
         function_mock = Mock(__name__='fn1')

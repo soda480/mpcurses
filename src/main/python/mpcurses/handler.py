@@ -81,6 +81,7 @@ def queue_handler(function):
                 result_queue.put({
                     offset: result
                 })
+            logger.debug(f'execution of {function.__name__} offset {offset} ended')
             # log control message that method completed
             logger.debug('DONE')
             if message_queue:

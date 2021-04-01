@@ -44,7 +44,7 @@ def get_screen_layout():
             'text': '-------',
             'text_color': 244,
             'color': 244,
-            'width': 7,
+            'length': 7,
             'right_justify': True,
             'regex': r'^item .* head is at (?P<value>.*)$',
             'table': True
@@ -53,7 +53,7 @@ def get_screen_layout():
             'position': (1, 18),
             'text': '',
             'color': 244,
-            'width': 28,
+            'length': 28,
             'regex': r"^'item' is '(?P<value>.*)'$",
             'table': True
         },
@@ -61,7 +61,7 @@ def get_screen_layout():
             'position': (1, 18),
             'text': '',
             'color': 14,
-            'width': 28,
+            'length': 28,
             'regex': r'^processing item (?P<value>.*)$',
             'table': True
         },
@@ -69,7 +69,7 @@ def get_screen_layout():
             'position': (1, 18),
             'text': '',
             'color': 7,
-            'width': 28,
+            'length': 28,
             'regex': r'^processed item (?P<value>.*)$',
             'table': True
         }

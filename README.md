@@ -23,6 +23,8 @@ The main features are:
   * Display tables
   * Display lists
 
+ Refer to documentation here: https://soda480.github.io/mpcurses/
+
 ### Installation ###
 ```bash
 pip install mpcurses
@@ -40,13 +42,13 @@ from mpcurses import MPcurses
 import namegenerator, time, logging
 logger = logging.getLogger(__name__)
 
-def run(*args):
+def do_something(*args):
     for _ in range(0, 600):
         logger.debug(f'processing item "{namegenerator.gen()}"')
         time.sleep(.01)
 
 MPcurses(
-    function=run,
+    function=do_something,
     screen_layout={
         'display_item': {
             'position': (1, 1),
@@ -62,21 +64,21 @@ MPcurses(
 Executing the code above results in the following:
 ![example](https://raw.githubusercontent.com/soda480/mpcurses/master/docs/images/example.gif)
 
-To scale execution of the function across multiple processes, we make a few simple updates:
+To scale execution of the function across multiple processes; we set the `process_data` parameter to a list whose total number of elements represent the number of processes to execute, and each list element represent the data to be passed to each respective process:
 
 ```python
 from mpcurses import MPcurses
 import namegenerator, time, logging
 logger = logging.getLogger(__name__)
 
-def run(*args):
+def do_something(*args):
     group = args[0].get('group', 0)
     for _ in range(0, 600):
         logger.debug(f'processing item "[{group}]: {namegenerator.gen()}"')
         time.sleep(.01)
 
 MPcurses(
-    function=run,
+    function=do_something,
     process_data=[{'group': 1}, {'group': 2}, {'group': 3}],
     screen_layout={
         'display_item': {

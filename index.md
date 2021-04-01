@@ -42,7 +42,7 @@ Class constuctor
 > Default value: len(**process_data**) if **process_data** is provided
 
 ### screen_layout
-> **dict** - A dictionary describing the layout and elements of the curses screen. Refer to the [screen layout](screen_layout.md) directives for the elements that can be configured.
+> **dict** - A dictionary describing the layout and elements of the curses screen. Refer to the [screen layout](https://soda480.github.io/mpcurses/screen_layout) directives for the elements that can be configured.
 > 
 > Default value: **{}**
 

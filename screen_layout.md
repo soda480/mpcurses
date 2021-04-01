@@ -1,14 +1,3 @@
-- [Screen Layout](#screen-layout)
-  * [Category Settings](#category-settings)
-    + [Effects](#effects)
-  * [Screen Settings](#screen-settings)
-  * [Table Settings](#table-settings)
-    + [Wrap-Around Table](#wrap-around-table)
-    + [Horizontal Table](#horizontal-table)
-    + [Examples](#examples)
-  * [Counter Settings](#counter-settings)
-    + [Examples](#examples-1)
-
 # Screen Layout
 A dictionary to represent the layout of items on your screen. A category item must be defined for each item you wish to display on the screen.
 

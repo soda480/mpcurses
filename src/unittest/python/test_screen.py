@@ -444,7 +444,7 @@ class TestScreen(unittest.TestCase):
     def test__get_category_values_Should_ReturnExpected_When_RightJustify(self, *patches):
         screen_layout = {
             'message': {
-                'width': 20,
+                'length': 20,
                 'right_justify': True,
                 'regex': '^(?P<value>.*)$',
             }

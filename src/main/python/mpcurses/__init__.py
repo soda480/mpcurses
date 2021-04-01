@@ -16,3 +16,4 @@
 
 from .handler import queue_handler
 from .mpcurses import MPcurses
+from .mpcontroller import MPcontroller

@@ -25,6 +25,8 @@ The main features are:
 
  Refer to documentation here: https://soda480.github.io/mpcurses/
 
+ Mpcurses is a subclass of `mpmq`, see [mpmq](https://pypi.org/project/mpmq/) for more information.
+
 ### Installation ###
 ```bash
 pip install mpcurses

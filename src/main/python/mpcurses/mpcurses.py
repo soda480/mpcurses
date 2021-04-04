@@ -31,8 +31,8 @@ from .screen import refresh_screen
 from .screen import update_screen_status
 from .screen import blink
 
-from .mpcontroller import MPcontroller
-from .mpcontroller import NoActiveProcesses
+from mpmq import MPmq
+from mpmq.mpmq import NoActiveProcesses
 
 logger = logging.getLogger(__name__)
 
@@ -69,8 +69,8 @@ class OnDict(dict):
         return value
 
 
-class MPcurses(MPcontroller):
-    """ a subclass of mpcurses.MPcontroller providing multi-processing (MP) capabilities for a curses screen
+class MPcurses(MPmq):
+    """ a subclass of MPmq providing multi-processing (MP) capabilities for a curses screen
     """
     def __init__(self, *args, **kwargs):
         """ MPcurses constructor

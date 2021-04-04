@@ -13,7 +13,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-from .handler import queue_handler
 from .mpcurses import MPcurses
-from .mpcontroller import MPcontroller

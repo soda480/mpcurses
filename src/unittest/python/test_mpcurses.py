@@ -22,9 +22,9 @@ from mock import MagicMock
 from queue import Empty
 
 from mpcurses.mpcurses import MPcurses
-from mpcurses.mpcurses import NoActiveProcesses
+from mpmq.mpmq import NoActiveProcesses
 from mpcurses.mpcurses import OnDict
-from mpcurses.handler import queue_handler
+from mpmq.handler import queue_handler
 
 import sys
 import logging

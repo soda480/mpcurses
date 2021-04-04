@@ -30,7 +30,7 @@ name = 'mpcurses'
 authors = [Author('Emilio Reyes', 'emilio.reyes@intel.com')]
 summary = 'Mpcurses is an abstraction of the Python curses and multiprocessing libraries providing function execution and runtime visualization capabilities'
 url = 'https://github.com/soda480/mpcurses'
-version = '0.3.0'
+version = '0.3.1'
 default_task = [
     'clean',
     'analyze',
@@ -71,6 +71,6 @@ def set_properties(project):
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Topic :: System :: Networking',
         'Topic :: System :: Systems Administration'])
-    project.set_property('radon_break_build_average_complexity_threshold', 3.6)
+    project.set_property('radon_break_build_average_complexity_threshold', 4)
     project.set_property('radon_break_build_complexity_threshold', 14)
     project.set_property('bandit_break_build', True)

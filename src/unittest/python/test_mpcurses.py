@@ -299,7 +299,7 @@ class TestMPcurses(unittest.TestCase):
 
         result = client.get_message()
         expected_result = {
-            'offset': '0',
+            'offset': 0,
             'control': 'DONE',
             'message': '#0-DONE'
         }
@@ -315,7 +315,7 @@ class TestMPcurses(unittest.TestCase):
 
         result = client.get_message()
         expected_result = {
-            'offset': '3',
+            'offset': 3,
             'control': 'ERROR',
             'message': '#3-ERROR'
         }

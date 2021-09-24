@@ -120,6 +120,8 @@ class MPcurses(MPmq):
         if self.blink_screen:
             self.blink_queue = Queue()
 
+        self.completed_processes = 0
+
     def start_blink_process(self):
         """ start blink process
         """
@@ -229,7 +231,7 @@ class MPcurses(MPmq):
         message = self.message_queue.get(False)
         match = re.match(r'^#(?P<offset>\d+)-(?P<control>DONE|ERROR)$', message)
         if match:
-            offset = match.group('offset')
+            offset = int(match.group('offset'))
             control = match.group('control')
         return {
             'offset': offset,

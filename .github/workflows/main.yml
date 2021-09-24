@@ -8,30 +8,29 @@ on:
       - master
 jobs:
   build:
-    runs-on: ubuntu-16.04
-    container: python:3.6-alpine
+    runs-on: ubuntu-20.04
+    container: python:3.9-slim
 
     steps:
     - uses: actions/checkout@v2
 
     - name: Install pybuilder
-      run: pip install pybuilder==0.11.17
+      run: pip install pybuilder
 
     - name: Install dependencies
       run: pyb install_dependencies
 
     - name: Execute build
-      run: pyb install
+      run: pyb -X
 
     - name: Install Codecov requirements
       run: |
-        apk update
-        apk add bash curl
-        sed -e 's,filename="mpcurses/,filename="src/main/python/mpcurses/,g' target/reports/coverage.xml > coverage.xml
+        apt-get update
+        apt-get install -y bash curl
+        sed -e 's,filename="mpcurses/,filename="src/main/python/mpcurses/,g' target/reports/mpcurses_coverage.xml > coverage.xml
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         file: coverage.xml
-

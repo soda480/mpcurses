@@ -23,8 +23,9 @@ use_plugin('python.install_dependencies')
 use_plugin('python.flake8')
 use_plugin('python.coverage')
 use_plugin('python.distutils')
-use_plugin('pypi:pybuilder_radon', '~=0.1.2')
-use_plugin('pypi:pybuilder_bandit', '~=0.1.3')
+use_plugin('pypi:pybuilder_radon')
+use_plugin('pypi:pybuilder_bandit')
+use_plugin('pypi:pybuilder_anybadge')
 
 name = 'mpcurses'
 authors = [Author('Emilio Reyes', 'emilio.reyes@intel.com')]
@@ -34,8 +35,10 @@ version = '0.4.0'
 default_task = [
     'clean',
     'analyze',
+    'publish',
     'radon',
     'bandit',
+    'anybadge',
     'package']
 license = 'Apache License, Version 2.0'
 description = summary
@@ -66,7 +69,7 @@ def set_properties(project):
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: POSIX :: Linux',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.9',
         'Topic :: Software Development :: Libraries',
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Topic :: System :: Networking',
@@ -74,3 +77,5 @@ def set_properties(project):
     project.set_property('radon_break_build_average_complexity_threshold', 4)
     project.set_property('radon_break_build_complexity_threshold', 14)
     project.set_property('bandit_break_build', True)
+    project.set_property('anybadge_exclude', 'coverage, complexity')
+    project.set_property('anybadge_use_shields', True)

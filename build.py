@@ -19,7 +19,6 @@ from pybuilder.core import Author
 
 use_plugin('python.core')
 use_plugin('python.unittest')
-use_plugin('python.install_dependencies')
 use_plugin('python.flake8')
 use_plugin('python.coverage')
 use_plugin('python.distutils')
@@ -38,8 +37,7 @@ default_task = [
     'publish',
     'radon',
     'bandit',
-    'anybadge',
-    'package']
+    'anybadge']
 license = 'Apache License, Version 2.0'
 description = summary
 
@@ -69,6 +67,9 @@ def set_properties(project):
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: POSIX :: Linux',
         'Programming Language :: Python',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Topic :: Software Development :: Libraries',
         'Topic :: Software Development :: Libraries :: Python Modules',

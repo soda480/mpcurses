@@ -5,7 +5,7 @@ on:
       - '**'
   pull_request:
     branches:
-      - master
+      - main
 jobs:
   build:
     runs-on: ubuntu-20.04
@@ -17,11 +17,8 @@ jobs:
     - name: Install pybuilder
       run: pip install pybuilder
 
-    - name: Install dependencies
-      run: pyb install_dependencies
-
     - name: Execute build
-      run: pyb -X
+      run: pyb
 
     - name: Install Codecov requirements
       run: |

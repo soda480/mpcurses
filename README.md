@@ -148,7 +148,7 @@ docker container run \
 -e https_proxy \
 -v $PWD:/code \
 mpcurses:latest \
-/bin/sh
+/bin/bash
 ```
 
 Execute the build:

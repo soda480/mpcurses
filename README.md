@@ -1,7 +1,7 @@
 # mpcurses #
 [![GitHub Workflow Status](https://github.com/soda480/mpcurses/workflows/build/badge.svg)](https://github.com/soda480/mpcurses/actions)
 [![Code Coverage](https://codecov.io/gh/soda480/mpcurses/branch/master/graph/badge.svg)](https://codecov.io/gh/soda480/mpcurses)
-[![Code Grade](https://www.code-inspector.com/project/12270/status/svg)](https://frontend.code-inspector.com/project/12270/dashboard)
+[![Code Grade](https://api.codiga.io/project/12270/status/svg)](https://app.codiga.io/public/project/12270/mpcurses/dashboard)
 [![vulnerabilities](https://img.shields.io/badge/vulnerabilities-None-brightgreen)](https://pypi.org/project/bandit/)
 [![PyPI version](https://badge.fury.io/py/mpcurses.svg)](https://badge.fury.io/py/mpcurses)
 [![python](https://img.shields.io/badge/python-3.9-teal)](https://www.python.org/downloads/)

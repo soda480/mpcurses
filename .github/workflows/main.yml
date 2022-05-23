@@ -1,33 +1,31 @@
 name: build
 on:
+  schedule:
+  - cron: "0 8 * * *"
   push:
     branches:
       - '**'
   pull_request:
     branches:
-      - main
+      - master
 jobs:
   build:
     runs-on: ubuntu-20.04
-    container: python:3.9-slim
-
     steps:
     - uses: actions/checkout@v2
 
-    - name: Install pybuilder
-      run: pip install pybuilder
-
-    - name: Execute build
-      run: pyb
-
-    - name: Install Codecov requirements
+    - name: Build Docker image
       run: |
-        apt-get update
-        apt-get install -y bash curl
-        sed -e 's,filename="mpcurses/,filename="src/main/python/mpcurses/,g' target/reports/mpcurses_coverage.xml > coverage.xml
+        docker image build -t mpcurses:latest .
+
+    - name: Prepare coverage
+      run: |
+        ID=$(docker create mpcurses)
+        docker cp $ID:/code/target/reports/mpcurses_coverage.xml mpcurses_coverage.xml
+        sed -i -e 's,filename="mpcurses/,filename="src/main/python/mpcurses/,g' mpcurses_coverage.xml
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
-        file: coverage.xml
+        file: mpcurses_coverage.xml

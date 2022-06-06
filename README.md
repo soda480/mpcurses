@@ -133,8 +133,6 @@ Clone the repository and ensure the latest version of Docker is installed on you
 Build the Docker image:
 ```sh
 docker image build \
---build-arg http_proxy \
---build-arg https_proxy \
 -t \
 mpcurses:latest .
 ```
@@ -144,8 +142,6 @@ Run the Docker container:
 docker container run \
 --rm \
 -it \
--e http_proxy \
--e https_proxy \
 -v $PWD:/code \
 mpcurses:latest \
 /bin/bash

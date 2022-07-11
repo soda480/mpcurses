@@ -1,10 +1,10 @@
-# mpcurses #
+# mpcurses
 [![GitHub Workflow Status](https://github.com/soda480/mpcurses/workflows/build/badge.svg)](https://github.com/soda480/mpcurses/actions)
 [![Code Coverage](https://codecov.io/gh/soda480/mpcurses/branch/master/graph/badge.svg)](https://codecov.io/gh/soda480/mpcurses)
 [![Code Grade](https://api.codiga.io/project/12270/status/svg)](https://app.codiga.io/public/project/12270/mpcurses/dashboard)
 [![vulnerabilities](https://img.shields.io/badge/vulnerabilities-None-brightgreen)](https://pypi.org/project/bandit/)
 [![PyPI version](https://badge.fury.io/py/mpcurses.svg)](https://badge.fury.io/py/mpcurses)
-[![python](https://img.shields.io/badge/python-3.9-teal)](https://www.python.org/downloads/)
+[![python](https://img.shields.io/badge/python-3.7%20%7C%203.8%20%7C%203.9%20%7C%203.10-teal)](https://www.python.org/downloads/)
 
 Mpcurses is an abstraction of the Python curses and multiprocessing libraries providing function execution and runtime visualization capabilities at scale. It contains a simple API to enable any Python function to be executed across one or more background processes and includes built-in directives to visualize the functions execution on a terminal screen. 
 
@@ -28,12 +28,12 @@ The main features are:
 
  Mpcurses is a subclass of `mpmq`, see [mpmq](https://pypi.org/project/mpmq/) for more information.
 
-### Installation ###
+### Installation
 ```bash
 pip install mpcurses
 ```
 
-### Examples ###
+### Examples
 
 To run the samples below you need to install the namegenerator module `pip install namegenerator`
 
@@ -111,7 +111,7 @@ Execute a function that processes a list of random items. Execution is scaled ac
 Execute a function that calculates prime numbers for a set range of integers. Execution is scaled across 10 different processes where each process computes the primes on a different set of numbers. For example, the first process computes primes for the set 1-10K, second process 10K-20K, third process 20K-30K, etc. The screen keeps track of the number of prime numbers encountered for each set and maintains a progress bar for each process.
 ![example3](https://raw.githubusercontent.com/soda480/mpcurses/master/docs/images/example3.gif)
 
-#### Running the examples ####
+#### Running the examples
 
 Build the Docker image and run the Docker container using the instructions described in the [Development](#development) section. Run the example scripts within the container:
 
@@ -119,16 +119,15 @@ Build the Docker image and run the Docker container using the instructions descr
 python examples/example#.py
 ```
 
-### Projects using `mpcurses` ###
+### Projects using `mpcurses`
 
 * [edgexfoundry/sync-github-labels](https://github.com/edgexfoundry/cd-management/tree/git-label-sync) A script that synchronizes GitHub labels and milestones
 
 * [edgexfoundry/prune-github-tags](https://github.com/edgexfoundry/cd-management/tree/prune-github-tags) A script that prunes GitHub pre-release tags
 
-### Development ###
+### Development
 
 Clone the repository and ensure the latest version of Docker is installed on your development server.
-
 
 Build the Docker image:
 ```sh
@@ -144,12 +143,10 @@ docker container run \
 -it \
 -v $PWD:/code \
 mpcurses:latest \
-/bin/bash
+bash
 ```
 
 Execute the build:
 ```sh
 pyb -X
 ```
-
-NOTE: the commands above assume your working behind a http proxy, if that is not the case then the proxy arguments can be discared from both commands.

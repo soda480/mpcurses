@@ -7,25 +7,50 @@ on:
       - '**'
   pull_request:
     branches:
-      - master
+      - main
 jobs:
-  build:
+  build-images:
+    strategy:
+      matrix:
+        version: ['3.7', '3.8', '3.9', '3.10']
+    name: Build Python Docker images
     runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v2
-
-    - name: Build Docker image
-      run: |
-        docker image build -t mpcurses:latest .
-
-    - name: Prepare coverage
-      run: |
-        ID=$(docker create mpcurses)
-        docker cp $ID:/code/target/reports/mpcurses_coverage.xml mpcurses_coverage.xml
-        sed -i -e 's,filename="mpcurses/,filename="src/main/python/mpcurses/,g' mpcurses_coverage.xml
-
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v1
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        file: mpcurses_coverage.xml
+      - uses: actions/checkout@v3
+      - name: build mpcurses ${{ matrix.version }} image
+        run:
+          docker image build --build-arg PYTHON_VERSION=${{ matrix.version }} -t mpcurses:${{ matrix.version }} .
+      - name: save mpcurses ${{ matrix.version }} image
+        if: ${{ matrix.version == '3.9' }}
+        run: |
+          mkdir -p images
+          docker save --output images/mpcurses-${{ matrix.version }}.tar mpcurses:${{ matrix.version }}
+      - name: upload mpcurses ${{ matrix.version }} image artifact
+        if: ${{ matrix.version == '3.9' }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: image
+          path: images/mpcurses-${{ matrix.version }}.tar
+  coverage:
+    name: Publish Code Coverage Report
+    needs: build-images
+    runs-on: ubuntu-20.04
+    steps:
+      - name: download image artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: image
+          path: images/
+      - name: load image
+        run:
+          docker load --input images/mpcurses-3.9.tar
+      - name: prepare report
+        run: |
+          ID=$(docker create mpcurses:3.9)
+          docker cp $ID:/code/target/reports/mpcurses_coverage.xml mpcurses_coverage.xml
+          sed -i -e 's,filename="mpcurses/,filename="src/main/python/mpcurses/,g' mpcurses_coverage.xml
+      - name: upload report
+        uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: mpcurses_coverage.xml

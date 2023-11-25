@@ -12,7 +12,7 @@ jobs:
   build-images:
     strategy:
       matrix:
-        version: ['3.7', '3.8', '3.9', '3.10', '3.11', '3.12' ]
+        version: ['3.8', '3.9', '3.10', '3.11', '3.12']
     name: Build Python Docker images
     runs-on: ubuntu-20.04
     steps:
@@ -50,7 +50,7 @@ jobs:
           docker cp $ID:/code/target/reports/mpcurses_coverage.xml mpcurses_coverage.xml
           sed -i -e 's,filename="mpcurses/,filename="src/main/python/mpcurses/,g' mpcurses_coverage.xml
       - name: upload report
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: mpcurses_coverage.xml

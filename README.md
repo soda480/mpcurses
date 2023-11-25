@@ -1,9 +1,9 @@
 # mpcurses
-[![build](https://github.com/soda480/mpcurses/actions/workflows/main.yml/badge.svg)](https://github.com/soda480/mpcurses/actions/workflows/main.yml)
+[![build+test](https://github.com/soda480/mpcurses/actions/workflows/main.yml/badge.svg)](https://github.com/soda480/mpcurses/actions/workflows/main.yml)
 [![Code Coverage](https://codecov.io/gh/soda480/mpcurses/branch/master/graph/badge.svg)](https://codecov.io/gh/soda480/mpcurses)
 [![vulnerabilities](https://img.shields.io/badge/vulnerabilities-None-brightgreen)](https://pypi.org/project/bandit/)
 [![PyPI version](https://badge.fury.io/py/mpcurses.svg)](https://badge.fury.io/py/mpcurses)
-[![python](https://img.shields.io/badge/python-3.7%20%7C%203.8%20%7C%203.9%20%7C%203.10-teal)](https://www.python.org/downloads/)
+[![python](https://img.shields.io/badge/python-3.8%20%7C%203.9%20%7C%203.10%20%7C%203.11-teal)](https://www.python.org/downloads/)
 
 Mpcurses is an abstraction of the Python curses and multiprocessing libraries providing function execution and runtime visualization capabilities at scale. It contains a simple API to enable any Python function to be executed across one or more background processes and includes built-in directives to visualize the functions execution on a terminal screen. 
 
@@ -131,8 +131,7 @@ Clone the repository and ensure the latest version of Docker is installed on you
 Build the Docker image:
 ```sh
 docker image build \
--t \
-mpcurses:latest .
+-t mpcurses:latest .
 ```
 
 Run the Docker container:

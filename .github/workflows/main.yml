@@ -1,4 +1,4 @@
-name: build
+name: build+test
 on:
   schedule:
   - cron: "0 8 * * 2,4,6"
@@ -12,7 +12,7 @@ jobs:
   build-images:
     strategy:
       matrix:
-        version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        version: ['3.8', '3.9', '3.10', '3.11']
     name: Build Python Docker images
     runs-on: ubuntu-20.04
     steps:

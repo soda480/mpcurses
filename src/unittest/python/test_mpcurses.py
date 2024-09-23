@@ -23,7 +23,6 @@ from queue import Empty
 
 from mpcurses.mpcurses import MPcurses
 from mpmq.mpmq import NoActiveProcesses
-from mpcurses.mpcurses import OnDict
 from mpmq.handler import queue_handler
 
 import sys
@@ -129,22 +128,12 @@ class TestMPcurses(unittest.TestCase):
         client.on_state_change()
         update_screen_status_patch.assert_called()
 
-    @patch('mpcurses.mpcurses.update_screen_status')
-    def test__on_state_change_Should_CallExpected_When_NoProcessCompleted(self, update_screen_status_patch, *patches):
-        screen_mock = Mock()
-        function_mock = Mock(__name__='mockfunc')
-        process_data = [{'range': '0-1'}, {'range': '2-3'}, {'range': '4-5'}]
-        client = MPcurses(function=function_mock, process_data=process_data, screen_layout={'_screen': {}})
-        client.screen = screen_mock
-        client.on_state_change(process_completed=False)
-        update_screen_status_patch.assert_called()
-
     @patch('mpcurses.mpcurses.update_screen')
     def test__on_state_change_Should_CallExpected_When_NoScreen(self, update_screen_patch, *patches):
         function_mock = Mock(__name__='mockfunc')
         process_data = [{'range': '0-1'}, {'range': '2-3'}, {'range': '4-5'}]
         client = MPcurses(function=function_mock, process_data=process_data)
-        client.on_state_change(process_completed=False)
+        client.on_state_change()
         update_screen_patch.assert_not_called()
 
     @patch('mpcurses.mpcurses.update_screen_status')
@@ -393,51 +382,3 @@ class TestMPcurses(unittest.TestCase):
         client = MPcurses(function=function_mock, process_data=process_data, screen_layout={'_screen': {'blink': False}})
         client.execute_run()
         wrapper_patch.assert_called_once_with(run_screen_patch)
-
-
-class TestOnDict(unittest.TestCase):
-
-    def setUp(self):
-        """
-        """
-        pass
-
-    def tearDown(self):
-        """
-        """
-        pass
-
-    def test__init_Should_SetOnChange_When_Called(self, *patches):
-        on_change_mock = Mock()
-        onDict = OnDict(on_change=on_change_mock)
-        self.assertEqual(onDict.on_change, on_change_mock)
-
-    def test__init_Should_RaiseValueError_When_OnChangeNotSpecified(self, *patches):
-        with self.assertRaises(ValueError):
-            OnDict()
-
-    def test__setitem_Should_CallOnChange_When_Called(self, *patches):
-        on_change_mock = Mock()
-        onDict = OnDict(on_change=on_change_mock)
-        onDict['key1'] = 'value1'
-        on_change_mock.assert_called_once_with(False)
-
-    def test__deltitem_Should_CallOnChange_When_Called(self, *patches):
-        on_change_mock = Mock()
-        onDict = OnDict(on_change=on_change_mock)
-        onDict['key1'] = 'value1'
-        del onDict['key1']
-        self.assertTrue(call(True) in on_change_mock.mock_calls)
-
-    def test__pop_Should_CallOnChange_When_Called(self, *patches):
-        on_change_mock = Mock()
-        onDict = OnDict(on_change=on_change_mock)
-        onDict['key1'] = 'value1'
-        onDict.pop('key1', None)
-        self.assertTrue(call(True) in on_change_mock.mock_calls)
-
-    def test__pop_Should_NotCallOnChange_When_NoValue(self, *patches):
-        on_change_mock = Mock()
-        onDict = OnDict(on_change=on_change_mock)
-        onDict.pop('key1', None)
-        on_change_mock.assert_not_called()

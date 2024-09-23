@@ -6,7 +6,7 @@ def get_screen_layout():
             'text_color': 7,
             'color': 27,
             'clear': True,
-            'regex': '^checking (?P<value>\d+)$'
+            'regex': r'^checking (?P<value>\d+)$'
         },
         'prime': {
             'position': (2, 4),

@@ -62,7 +62,8 @@ def set_properties(project):
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
-        'Programming Language :: Python :: 3.11'])
+        'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12'])
     project.set_property('radon_break_build_average_complexity_threshold', 4)
     project.set_property('radon_break_build_complexity_threshold', 14)
     project.set_property('bandit_break_build', True)

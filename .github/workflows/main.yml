@@ -12,7 +12,7 @@ jobs:
   build-images:
     strategy:
       matrix:
-        version: ['3.8', '3.9', '3.10', '3.11']
+        version: ['3.8', '3.9', '3.10', '3.11', '3.12']
     name: Build Python Docker images
     runs-on: ubuntu-22.04
     steps:

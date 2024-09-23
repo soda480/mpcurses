@@ -14,43 +14,9 @@ jobs:
       matrix:
         version: ['3.8', '3.9', '3.10', '3.11']
     name: Build Python Docker images
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: build mpcurses ${{ matrix.version }} image
         run:
           docker image build --build-arg PYTHON_VERSION=${{ matrix.version }} -t mpcurses:${{ matrix.version }} .
-      - name: save mpcurses ${{ matrix.version }} image
-        if: ${{ matrix.version == '3.9' }}
-        run: |
-          mkdir -p images
-          docker save --output images/mpcurses-${{ matrix.version }}.tar mpcurses:${{ matrix.version }}
-      - name: upload mpcurses ${{ matrix.version }} image artifact
-        if: ${{ matrix.version == '3.9' }}
-        uses: actions/upload-artifact@v3
-        with:
-          name: image
-          path: images/mpcurses-${{ matrix.version }}.tar
-  coverage:
-    name: Publish Code Coverage Report
-    needs: build-images
-    runs-on: ubuntu-20.04
-    steps:
-      - name: download image artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: image
-          path: images/
-      - name: load image
-        run:
-          docker load --input images/mpcurses-3.9.tar
-      - name: prepare report
-        run: |
-          ID=$(docker create mpcurses:3.9)
-          docker cp $ID:/code/target/reports/mpcurses_coverage.xml mpcurses_coverage.xml
-          sed -i -e 's,filename="mpcurses/,filename="src/main/python/mpcurses/,g' mpcurses_coverage.xml
-      - name: upload report
-        uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          file: mpcurses_coverage.xml

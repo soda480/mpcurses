@@ -137,9 +137,8 @@ def main():
         processes_to_start=5,
         screen_layout=get_screen_layout(),
         shared_data={'bays': range(1, 17)})
-    mpcurses.execute()
-
-    if any([process['result'] for process in mpcurses.process_data]):
+    results = mpcurses.execute()
+    if any([result for result in results]):
         sys.exit(-1)
 
 

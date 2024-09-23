@@ -48,7 +48,7 @@ def main():
         function=check_primes,
         process_data=process_data,
         processes_to_start=len(process_data))
-    mpc.execute()
+    results = mpc.execute()
 
     for index, process in enumerate(process_data):
         print(f"the range {process['range']} has {len(results[index])} primes")

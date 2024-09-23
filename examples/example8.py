@@ -44,13 +44,14 @@ def main():
         {'range': '10001-20000'},
         {'range': '20001-30000'}
     ]
-    MPcurses(
+    mpc = MPcurses(
         function=check_primes,
         process_data=process_data,
-        processes_to_start=len(process_data)).execute()
+        processes_to_start=len(process_data))
+    mpc.execute()
 
-    for process in process_data:
-        print(f"the range {process['range']} has {len(process['result'])} primes")
+    for index, process in enumerate(process_data):
+        print(f"the range {process['range']} has {len(results[index])} primes")
 
 
 if __name__ == '__main__':  

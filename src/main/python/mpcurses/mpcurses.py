@@ -37,38 +37,6 @@ from mpmq.mpmq import NoActiveProcesses
 logger = logging.getLogger(__name__)
 
 
-class OnDict(dict):
-    """ subclass dict to execute method when items are added or removed changes
-    """
-    def __init__(self, on_change=None):
-        """ override constructor
-        """
-        if on_change is None:
-            raise ValueError('on_change method must be specified')
-        super(OnDict, self).__init__()
-        self.on_change = on_change
-
-    def __setitem__(self, *args):
-        """ override setitem
-        """
-        super(OnDict, self).__setitem__(*args)
-        self.on_change(False)
-
-    def __delitem__(self, *args):
-        """ override delitem
-        """
-        super(OnDict, self).__delitem__(*args)
-        self.on_change(True)
-
-    def pop(self, *args):
-        """ override pop
-        """
-        value = super(OnDict, self).pop(*args)
-        if value is not None:
-            self.on_change(True)
-        return value
-
-
 class MPcurses(MPmq):
     """ a subclass of MPmq providing multi-processing (MP) capabilities for a curses screen
     """
@@ -102,8 +70,6 @@ class MPcurses(MPmq):
             # respect processes_to_start if initially passed in
             self.processes_to_start = processes_to_start if processes_to_start else None
 
-        self.active_processes = OnDict(on_change=self.on_state_change)
-
         self.init_messages = [] if init_messages is None else init_messages
         start_time = datetime.now().strftime('%m/%d/%Y %H:%M:%S')
         self.init_messages.append(f'mpcurses: Started:{start_time}')
@@ -119,8 +85,6 @@ class MPcurses(MPmq):
         self.blink_queue = None
         if self.blink_screen:
             self.blink_queue = Queue()
-
-        self.completed_processes = 0
 
     def start_blink_process(self):
         """ start blink process
@@ -140,20 +104,26 @@ class MPcurses(MPmq):
             self.blink_process.terminate()
             logger.debug('terminated blink process')
 
-    def on_state_change(self, process_completed=True):
+    def on_start_process(self):
+        """ override base class method - call on_state_change
+        """
+        self.on_state_change()
+
+    def on_complete_process(self):
+        """ override base class method - call on_state_change
+        """
+        self.on_state_change()
+
+    def on_state_change(self):
         """ update screen on state change
         """
         if not self.screen:
             return
-
-        if process_completed:
-            self.completed_processes += 1
-
         update_screen_status(
             self.screen,
             'process-update',
             self.screen_layout['_screen'],
-            running=len(self.active_processes),
+            running=self.active_processes,
             queued=self.process_queue.qsize(),
             completed=self.completed_processes)
 

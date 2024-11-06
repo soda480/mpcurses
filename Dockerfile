@@ -5,5 +5,5 @@ ENV TERM=xterm-256color
 WORKDIR /code
 COPY . /code/
 RUN pip install --upgrade pip && \
-    pip install pybuilder namegenerator
+    pip install pybuilder namegenerator faker
 RUN pyb -X

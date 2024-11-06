@@ -217,19 +217,23 @@ def get_category_values(message, offset, screen_layout):
     for category, data in screen_layout.items():
         regex = data.get('regex')
         if regex:
-
             match = re.match(regex, message)
             if match:
-
                 value = None
                 if match.groups():
-                    value = match.group('value')
+                    # named subgroup called value takes precedence
+                    if 'value' in match.groupdict() and match.group('value'):
+                        value = match.group('value')
+                    else:
+                        for group in match.groups():
+                            # value is the first parenthesized subgroup that is not null
+                            if group is not None:
+                                value = group
+                                break
                     length = len(value)
                     max_length = data.get('length', VALUE_LENGTH)
-
                     if length > max_length:
                         value = f'{value[0:max_length - 3]}...'
-
                     if data.get('right_justify'):
                         spaces = ' ' * (max_length - length)
                         value = f'{spaces}{value}'
@@ -237,15 +241,11 @@ def get_category_values(message, offset, screen_layout):
                 original_value = value
                 if screen_layout[category].get('keep_count'):
                     value = get_category_count(category, offset, screen_layout)
-
                 if screen_layout[category].get('replace_text'):
                     value = screen_layout[category]['replace_text']
-
                 if screen_layout[category].get('list'):
                     value = original_value
-
                 category_values.append((category, value))
-
     return category_values
 
 
@@ -415,8 +415,12 @@ def update_screen(message, screen, screen_layout):
         for (category, value) in category_values:
             y_pos = get_category_y_pos(category, offset, screen_layout)
             x_pos = get_category_x_pos(category, offset, screen_layout)
-            color = get_category_color(category, sanitized_message, screen_layout)
             process_clear(category, y_pos, x_pos, screen_layout, screen)
+            effects_use_matched_value = screen_layout[category].get('effects_use_matched_value', False)
+            if effects_use_matched_value:
+                color = get_category_color(category, value, screen_layout)
+            else:
+                color = get_category_color(category, sanitized_message, screen_layout)
             screen.addstr(y_pos, x_pos, value, curses.color_pair(color))
             process_counter(offset, category, value, screen_layout, screen)
             screen.refresh()

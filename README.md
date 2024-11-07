@@ -116,7 +116,7 @@ Execute a function that calculates prime numbers for a set range of integers. Ex
 Build the Docker image and run the Docker container using the instructions described in the [Development](#development) section. Run the example scripts within the container:
 
 ```bash
-python examples/example#.py
+python examples/##/sample.py
 ```
 
 ### Projects using `mpcurses`

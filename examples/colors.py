@@ -1,16 +1,10 @@
-# Sample - Prime Number Counter
-
-# from mpcurses import queue_handler
 from mpcurses import MPcurses
-
-from time import sleep
 import logging
+
 logger = logging.getLogger(__name__)
 
-
-def noop(*args):
+def noop(arg1=None):
     pass
-
 
 def get_screen_layout():
     layout = {}
@@ -31,13 +25,12 @@ def get_screen_layout():
             x_pos = x_pos + len(text) + 2
     return layout
 
-
 def main():
     MPcurses(
         function=noop,
-        process_data=[{}],
-        processes_to_start=1,
-        screen_layout=get_screen_layout())
+        process_data=[{'arg1': 'value1'}],
+        # processes_to_start=1,
+        screen_layout=get_screen_layout()).execute()
 
 
 if __name__ == '__main__':

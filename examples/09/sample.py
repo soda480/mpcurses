@@ -17,13 +17,14 @@ def get_servers(bays=None):
         servers.append({
             'bay': str(bay).zfill(2),
             'firmware_version': random.choice(['1.01', '2.01', '2.00', '2.02', '2.03', '2.04', '2.05', '2.06']),
-            'servername': Faker().name().replace(' ', '').lower() + '.scn.com',
+            # 'servername': Faker().name().replace(' ', '').lower() + '.scn.com',
+            'servername': Faker().sbn9() + '-' + random.choice(['A', 'B', 'C', 'D', 'E', 'F'])
         })
     sleep(3.5)
     return (servers, {'bays': bays, 'derived_key': 'derived_value'})
 
 def execute_task(message):
-    message = 'EX5: ' + message
+    message = 'EX9: ' + message
     lookup = {
         'turning': 'turned',
         'applying': 'applied',
@@ -32,11 +33,12 @@ def execute_task(message):
     }
     logger.debug(message)
     # simulate work
-    sleep_time = random.choice(range(1, 11))
+    # sleep_time = random.choice(range(1, 20))
+    sleep_time = random.choice([.1, .15, .2, .25, .3, .35, .4, .5, .6, .7, .8, .9, 1, 3, 5])
     sleep(sleep_time)
     # simulate random error
-    if sleep_time >= 10:
-        raise Exception(message.replace('EX5: ', 'EX5: failed: '))
+    if sleep_time >= 4:
+        raise Exception(message.replace('EX9: ', 'EX9: failed: '))
     # log completed message
     for key, value in lookup.items():
         if key in message:
@@ -58,7 +60,7 @@ def update_firmware(bay=None, firmware_version=None, servername=None, bays=None,
         logger.debug(f"'firmware version' is '2.64'")
         execute_task(f'turning maintenance mode OFF for server at bay {bay_number}')
 
-        logger.debug(f'EX5: firmware update on server {servername} at bay {bay_number} was successful')
+        logger.debug(f'EX9: firmware update on server {servername} at bay {bay_number} was successful')
     except Exception as exception:
         logger.error(str(exception))
         return exception

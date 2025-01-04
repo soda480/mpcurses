@@ -40,22 +40,22 @@ screen_layout = {
         'text_color': 15,
     },
     'version_header': {
-        'position': (2, 37),
+        'position': (2, 20),
         'text': 'Ver.',
         'text_color': 15,
     },
     'tasks_header1': {
-        'position': (1, 42),
+        'position': (1, 25),
         'text': 'Tasks',
         'text_color': 15,
     },
     'tasks_header2': {
-        'position': (2, 42),
+        'position': (2, 25),
         'text': '12345',
         'text_color': 15,
     },
     'message_header': {
-        'position': (2, 48),
+        'position': (2, 31),
         'text': 'Messages',
         'text_color': 15,
     },
@@ -81,7 +81,7 @@ screen_layout = {
     'servername': {
         'position': (3, 5),
         'color': 243,
-        'regex': r"^'servername' is '(?P<value>.*)'|EX5: firmware update on server (.*) at bay \d+ was successful$",
+        'regex': r"^'servername' is '(?P<value>.*)'|EX9: firmware update on server (.*) at bay \d+ was successful$",
         'effects': [
             {
                 'regex': r'^.* firmware update on server (.*) at bay \d+ was successful$',
@@ -91,7 +91,7 @@ screen_layout = {
         'table': True
     },
     'version': {
-        'position': (3, 37),
+        'position': (3, 20),
         'color': 243,
         'regex': r"^'firmware version' is '(?P<value>.*)'$",
         'effects_use_matched_value': True,
@@ -104,7 +104,7 @@ screen_layout = {
         'table': True
     },
     'task1': {
-        'position': (3, 42),
+        'position': (3, 25),
         'replace_text': chr(9632),
         'regex': r'^.*turn.* maintenance mode ON for server at bay \d+$',
         'effects': [
@@ -119,7 +119,7 @@ screen_layout = {
         'table': True
     },
     'task2': {
-        'position': (3, 43),
+        'position': (3, 26),
         'replace_text': chr(9632),
         'regex': r'^.*appl.* firmware update for server at bay \d+$',
         'effects': [
@@ -134,7 +134,7 @@ screen_layout = {
         'table': True
     },
     'task3': {
-        'position': (3, 44),
+        'position': (3, 27),
         'replace_text': chr(9632),
         'regex': r'^.*recycl.* server at bay \d+$',
         'effects': [
@@ -149,7 +149,7 @@ screen_layout = {
         'table': True
     },
     'task4': {
-        'position': (3, 45),
+        'position': (3, 28),
         'replace_text': chr(9632),
         'regex': r'^.*verif.* firmware update for server at bay \d+$',
         'effects': [
@@ -164,7 +164,7 @@ screen_layout = {
         'table': True
     },
     'task5': {
-        'position': (3, 46),
+        'position': (3, 29),
         'replace_text': chr(9632),
         'regex': r'^.*turn.* maintenance mode OFF for server at bay \d+$',
         'effects': [
@@ -179,10 +179,10 @@ screen_layout = {
         'table': True
     },
     'message': {
-        'position': (3, 48),
+        'position': (3, 31),
         'color': 243,
         'clear': True,
-        'regex': r'^EX5: (.*)|ERROR: EX5: (.*)$',
+        'regex': r'^EX9: (.*)|ERROR: EX9: (.*)$',
         'effects_use_matched_value': True,
         'effects': [
             {

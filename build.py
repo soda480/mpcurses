@@ -27,8 +27,8 @@ use_plugin('pypi:pybuilder_bandit')
 use_plugin('pypi:pybuilder_anybadge')
 
 name = 'mpcurses'
-authors = [Author('Emilio Reyes', 'emilio.reyes@intel.com')]
-summary = 'Mpcurses is an abstraction of the Python curses and multiprocessing libraries providing function execution and runtime visualization capabilities'
+authors = [Author('Emilio Reyes', 'soda480@gmail.com')]
+summary = 'The mpcurses module facilitates seamless terminal screen updates from child processes within a multiprocessing worker pool, leveraging the curses library for terminal manipulation'
 url = 'https://github.com/soda480/mpcurses'
 version = '1.0.0'
 default_task = [

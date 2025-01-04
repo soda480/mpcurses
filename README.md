@@ -4,41 +4,26 @@
 [![complexity](https://img.shields.io/badge/complexity-A-brightgreen)](https://radon.readthedocs.io/en/latest/api.html#module-radon.complexity)
 [![vulnerabilities](https://img.shields.io/badge/vulnerabilities-None-brightgreen)](https://pypi.org/project/bandit/)
 [![PyPI version](https://badge.fury.io/py/mpcurses.svg)](https://badge.fury.io/py/mpcurses)
-[![python](https://img.shields.io/badge/python-3.8%20%7C%203.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-teal)](https://www.python.org/downloads/)
+[![python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12%20%7C%203.12-teal)](https://www.python.org/downloads/)
 
-Mpcurses is an abstraction of the Python curses and multiprocessing libraries providing function execution and runtime visualization capabilities at scale. It contains a simple API to enable any Python function to be executed across one or more background processes and includes built-in directives to visualize the functions execution on a terminal screen. 
+The mpcurses package facilitates seamless terminal screen updates from child processes within a multiprocessing worker pool - leveraging the curses library for terminal manipulation. The `MPcurses` class is a subclass of [MPmq](https://pypi.org/project/mpmq/); a multiprocessing message queue which enables inter-process communication (IPC) between child workers and a parent process through queuing and consumption of log messages. Mpcurses provides a lightweight abstraction for the curses terminal screen, representing it as a Python dictionary. It includes predefined directives for updating the screen, encompassing:
 
-The mpcurses API allows for seamless integration since it does not require the target function to include additional context about curses or multiprocessing. The target function does need to implement logging since log messages are the primary means of inter-process communication between the background processes executing the function and the main process updating the curses screen on the terminal.
+- Numeric counter management
+- Match messages using regular expressions
+- Text value and color updates
+- Visual indicator maintenance
+- Progress bar rendering
+- Table and list displays
 
-The main features are:
-
-* Execute a function across one or more concurrent processes
-* Queue execution to ensure a predefined number of processes are running
-* Visualize function execution on the terminal screen using curses
-* Define the screen layout using a Python dict
-* Leverage built-in directives to dynamically update the screen when events occur by analyzing log messages
-  * Keep numeric counts
-  * Update text values and colors
-  * Maintain visual indicators
-  * Display progress bars
-  * Display tables
-  * Display lists
-
- Refer to documentation here: https://soda480.github.io/mpcurses/
-
- Mpcurses is a subclass of `mpmq`, see [mpmq](https://pypi.org/project/mpmq/) for more information.
+ Refer to the MPcurses documentation here: https://soda480.github.io/mpcurses/
 
 ### Installation
 ```bash
 pip install mpcurses
 ```
-
 ### Examples
 
-To run the samples below you need to install the namegenerator module `pip install namegenerator`
-
-
-A simple example using mpcurses:
+Invoke a single child process to execute a task defined by the `do_something` function. Mpcurses captures all log messages and sends them to a thread-safe queue, the main process consumes messages and uses regular expressions to update the screen which is represented as a dictionary.
 
 ```python
 from mpcurses import MPcurses
@@ -46,7 +31,7 @@ import namegenerator, time, logging
 logger = logging.getLogger(__name__)
 
 def do_something(*args):
-    for _ in range(0, 600):
+    for _ in range(0, 400):
         logger.debug(f'processing item "{namegenerator.gen()}"')
         time.sleep(.01)
 
@@ -54,70 +39,35 @@ MPcurses(
     function=do_something,
     screen_layout={
         'display_item': {
-            'position': (1, 1),
-            'text': 'Processing:',
-            'text_color': 0,
-            'color': 14,
-            'clear': True,
-            'regex': r'^processing item "(?P<value>.*)"$'
-        }
+            'position': (1, 1), 'text': 'Processing:', 'text_color': 0, 'color': 14,
+            'clear': True, 'regex': r'^processing item "(?P<value>.*)"$'}
     }).execute()
  ```
 
 Executing the code above results in the following:
-![example](https://raw.githubusercontent.com/soda480/mpcurses/master/docs/images/example.gif)
+![example](https://raw.githubusercontent.com/soda480/mpcurses/master/docs/images/demo.gif)
 
-To scale execution of the function across multiple processes; we set the `process_data` parameter to a list whose total number of elements represent the number of processes to execute, and each list element represent the data to be passed to each respective process:
+**NOTE** none of the functions being executed in any of the examples include information about the curses screen, multiprocessing or messaging queue - this is handled seamlessly by mpcurses.
 
-```python
-from mpcurses import MPcurses
-import namegenerator, time, logging
-logger = logging.getLogger(__name__)
+Build the Docker image using the instructions below, run the examples. `python examples/##/sample.py`
 
-def do_something(*args):
-    group = args[0].get('group', 0)
-    for _ in range(0, 600):
-        logger.debug(f'processing item "[{group}]: {namegenerator.gen()}"')
-        time.sleep(.01)
+#### [Prime Numbers Counter](https://github.com/soda480/mpcurses/blob/master/examples/03/sample.py)
 
-MPcurses(
-    function=do_something,
-    process_data=[{'group': 1}, {'group': 2}, {'group': 3}],
-    screen_layout={
-        'display_item': {
-            'position': (1, 1),
-            'color': 14,
-            'clear': True,
-            'regex': r'^processing item "(?P<value>.*)"$',
-            'table': True
-        }
-    }).execute()
-```
+Execute a function that calculates prime numbers for a set range of integers. Execution is scaled across 7 different workers where each process computes the primes for a different range of numbers. For example, the first worker computes primes for the range 1-10K, second worker computes for the range 10K-20K, etc. The main process keeps track of the number of prime numbers encountered for each worker and shows overall progress for each worker using a progress bar.
 
-Executing the code above results in the following:
-![example](https://raw.githubusercontent.com/soda480/mpcurses/master/docs/images/example-multi.gif)
+![example](https://raw.githubusercontent.com/soda480/mpcurses/master/docs/images/example3.gif)
 
-Serveral [examples](https://github.com/soda480/mpcurses/tree/master/examples) are included to help introduce the mpcurses library. Note the functions contained in all the examples are Python functions that have no context about multiprocessing or curses, they simply perform a function on a given dataset. Mpcurses takes care of setting up the multiprocessing, configuring the curses screen and maintaining the thread-safe queues that are required for inter-process communication.
+#### [Item Processor](https://github.com/soda480/mpcurses/blob/master/examples/06/sample.py)
 
-#### [example1](https://github.com/soda480/mpcurses/blob/master/examples/example1.py)
-Execute a function that processes a list of random items. The screen maintains indicators showing the number of items that have been processed. Two lists are maintained displaying the items that had errors and warnings.
-![example1](https://raw.githubusercontent.com/soda480/mpcurses/master/docs/images/example1.gif)
+Execute a function that processes a list of random items. Execution is scaled across 3 workers where each worker processes a unique set of items. The main process maintains indicators showing the number of items that have been processed by each worker; counting the number of Successful, Errors and Warnings. Three lists are also maintained, one for each group that list which specific items had Warnings and Failures.
 
-#### [example2](https://github.com/soda480/mpcurses/blob/master/examples/example2.py)
-Execute a function that processes a list of random items. Execution is scaled across three processes where each is responsible for processing items for a particular group. The screen maintains indicators displaying the items that had errors and warnings for each group.
-![example2](https://raw.githubusercontent.com/soda480/mpcurses/master/docs/images/example2.gif)
+![example](https://raw.githubusercontent.com/soda480/mpcurses/master/docs/images/example6.gif)
 
-#### [example3](https://github.com/soda480/mpcurses/blob/master/examples/example3.py)
-Execute a function that calculates prime numbers for a set range of integers. Execution is scaled across 10 different processes where each process computes the primes on a different set of numbers. For example, the first process computes primes for the set 1-10K, second process 10K-20K, third process 20K-30K, etc. The screen keeps track of the number of prime numbers encountered for each set and maintains a progress bar for each process.
-![example3](https://raw.githubusercontent.com/soda480/mpcurses/master/docs/images/example3.gif)
+#### [Bay Enclosure Firmware Update](https://github.com/soda480/mpcurses/blob/master/examples/09/sample.py)
 
-#### Running the examples
+Execute a function that contains a workflow containing tasks to update firmware on a server residing in a blade enclosure. Execution is scaled across a worker pool with five active workers. The main process updates the screen showing status of each worker as they execute the workflow tasks for each blade server. 
 
-Build the Docker image and run the Docker container using the instructions described in the [Development](#development) section. Run the example scripts within the container:
-
-```bash
-python examples/##/sample.py
-```
+![example](https://raw.githubusercontent.com/soda480/mpcurses/master/docs/images/example9.gif)
 
 ### Projects using `mpcurses`
 

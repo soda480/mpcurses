@@ -1,20 +1,20 @@
 import sys
 import random
-import namegenerator
 import logging
 from time import sleep
+from faker import Faker
 
 from mpcurses import MPcurses
 from layout import screen_layout
 
 
 logger = logging.getLogger(__name__)
-
+f = Faker()
 
 def get_items():
     items = []
     for count in range(0, 1000):
-        items.append(namegenerator.gen())
+        items.append(f.name())
     return items
 
 

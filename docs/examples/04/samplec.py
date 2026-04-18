@@ -1,5 +1,5 @@
 # counter example - with progress bar
-from example_counter1 import do_work
+from sample import do_work
 from mpcurses import MPcurses
 from layout import screen_layout
 

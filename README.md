@@ -1,10 +1,8 @@
-# mpcurses
 [![build+test](https://github.com/soda480/mpcurses/actions/workflows/main.yml/badge.svg)](https://github.com/soda480/mpcurses/actions/workflows/main.yml)
 [![coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://pybuilder.io/)
-[![complexity](https://img.shields.io/badge/complexity-A-brightgreen)](https://radon.readthedocs.io/en/latest/api.html#module-radon.complexity)
-[![vulnerabilities](https://img.shields.io/badge/vulnerabilities-None-brightgreen)](https://pypi.org/project/bandit/)
 [![PyPI version](https://badge.fury.io/py/mpcurses.svg)](https://badge.fury.io/py/mpcurses)
-[![python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12%20%7C%203.12-teal)](https://www.python.org/downloads/)
+
+# mpcurses
 
 The mpcurses package facilitates seamless terminal screen updates from child processes within a multiprocessing worker pool - leveraging the curses library for terminal manipulation. The `MPcurses` class is a subclass of [MPmq](https://pypi.org/project/mpmq/); a multiprocessing message queue which enables inter-process communication (IPC) between child workers and a parent process through queuing and consumption of log messages. Mpcurses provides a lightweight abstraction for the curses terminal screen, representing it as a Python dictionary. It includes predefined directives for updating the screen, encompassing:
 
@@ -82,6 +80,7 @@ Clone the repository and ensure the latest version of Docker is installed on you
 Build the Docker image:
 ```sh
 docker image build \
+--target build-image \
 -t mpcurses:latest .
 ```
 
@@ -97,5 +96,5 @@ bash
 
 Execute the build:
 ```sh
-pyb -X
+make dev
 ```

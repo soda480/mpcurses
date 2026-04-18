@@ -1,6 +1,6 @@
 # counter example
 
-import namegenerator
+from faker import Faker
 import logging
 from time import sleep
 from mpcurses import MPcurses
@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 def get_items():
     items = []
     for count in range(0, 1000):
-        items.append(namegenerator.gen())
+        items.append(Faker().name())
     return items
 
 def do_work(*args):

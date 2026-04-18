@@ -1,5 +1,5 @@
 [![build+test](https://github.com/soda480/mpcurses/actions/workflows/main.yml/badge.svg)](https://github.com/soda480/mpcurses/actions/workflows/main.yml)
-[![coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://pybuilder.io/)
+![Coverage](https://raw.githubusercontent.com/soda480/mpcurses/main/docs/badges/coverage.svg)
 [![PyPI version](https://badge.fury.io/py/mpcurses.svg)](https://badge.fury.io/py/mpcurses)
 
 # mpcurses

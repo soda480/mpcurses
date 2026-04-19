@@ -1,87 +1,122 @@
-# mpcurses
 [![build+test](https://github.com/soda480/mpcurses/actions/workflows/main.yml/badge.svg)](https://github.com/soda480/mpcurses/actions/workflows/main.yml)
-[![coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://pybuilder.io/)
-[![complexity](https://img.shields.io/badge/complexity-A-brightgreen)](https://radon.readthedocs.io/en/latest/api.html#module-radon.complexity)
-[![vulnerabilities](https://img.shields.io/badge/vulnerabilities-None-brightgreen)](https://pypi.org/project/bandit/)
+![Coverage](https://raw.githubusercontent.com/soda480/mpcurses/main/docs/badges/coverage.svg)
 [![PyPI version](https://badge.fury.io/py/mpcurses.svg)](https://badge.fury.io/py/mpcurses)
-[![python](https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12%20%7C%203.12-teal)](https://www.python.org/downloads/)
 
-The mpcurses package facilitates seamless terminal screen updates from child processes within a multiprocessing worker pool - leveraging the curses library for terminal manipulation. The `MPcurses` class is a subclass of [MPmq](https://pypi.org/project/mpmq/); a multiprocessing message queue which enables inter-process communication (IPC) between child workers and a parent process through queuing and consumption of log messages. Mpcurses provides a lightweight abstraction for the curses terminal screen, representing it as a Python dictionary. It includes predefined directives for updating the screen, encompassing:
+# mpcurses
 
-- Numeric counter management
-- Match messages using regular expressions
-- Text value and color updates
-- Visual indicator maintenance
-- Progress bar rendering
-- Table and list displays
+`mpcurses` is a Python package for running work in multiple processes and visualizing that work live in the terminal using `curses`.
 
- Refer to the MPcurses documentation here: https://soda480.github.io/mpcurses/
+It is built for programs where multiple workers are running in parallel and you need a clean, real-time view of what’s happening. Under the hood, `MPcurses` builds on [mpmq](https://pypi.org/project/mpmq/) to move messages from child processes back to the parent process. Your workers emit normal log messages. `mpcurses` consumes those messages, matches them with regular expressions, and updates specific parts of the screen based on a declarative `screen_layout`.
 
-### Installation
+## Why use `mpcurses`
+
+Parallel workloads usually break terminal output:
+
+- logs get mixed together
+- progress is hard to track
+- building a clean UI takes too much effort
+
+`mpcurses` fixes that by separating concerns:
+
+- workers do the work  
+- workers log messages  
+- the main process renders the UI  
+
+You get structured, readable output without polluting your worker code.
+
+`mpcurses` gives you a practical way to build terminal dashboards for multiprocessing workloads without forcing curses logic into your worker functions. If your automation or CLI already emits useful log messages, `mpcurses` lets you turn those messages into a structured, real-time terminal UI.
+
+Refer to the MPcurses documentation here: https://soda480.github.io/mpcurses/
+
+## Installation
+
 ```bash
 pip install mpcurses
 ```
-### Examples
 
-Invoke a single child process to execute a task defined by the `do_something` function. Mpcurses captures all log messages and sends them to a thread-safe queue, the main process consumes messages and uses regular expressions to update the screen which is represented as a dictionary.
+## Quick Start
 
-```python
+Run a simple example:
+
+```Python
 from mpcurses import MPcurses
-import namegenerator, time, logging
+from time import sleep
+import logging
+import uuid
+import random
+
 logger = logging.getLogger(__name__)
 
-def do_something(*args):
-    for _ in range(0, 400):
-        logger.debug(f'processing item "{namegenerator.gen()}"')
-        time.sleep(.01)
+def do_work(worker_id=None, num_items=None):
+    logger.debug(f'worker {worker_id} will process {num_items} items')
+    for _ in range(num_items):
+        logger.debug(f'processing item "{uuid.uuid4()}"')
+        sleep(.01)
 
-MPcurses(
-    function=do_something,
-    screen_layout={
-        'display_item': {
-            'position': (1, 1), 'text': 'Processing:', 'text_color': 0, 'color': 14,
-            'clear': True, 'regex': r'^processing item "(?P<value>.*)"$'}
-    }).execute()
- ```
+def main():
+    MPcurses(
+        function=do_work,
+        process_data=[{'worker_id': f'Worker-{i}', 'num_items': random.randint(100, 200)} for i in range(3)],
+        screen_layout={
+            'worker': {'position': (1, 1), 'color': 2, 'table': True, 'clear': True, 'regex': r'^worker (?P<value>.*) will process \d+ items$'},
+            'num_items': {'position': (1, 10), 'color': 4, 'table': True, 'clear': True, 'regex': r'^worker .* will process (?P<value>\d+) items$'},
+            'item': {'position': (1, 14), 'color': 6, 'table': True, 'clear': True, 'regex': r'^processing item "(?P<value>.*)"$'},
+        }).execute()
 
-Executing the code above results in the following:
-![example](https://raw.githubusercontent.com/soda480/mpcurses/master/docs/images/demo.gif)
+if __name__ == '__main__':
+    main()
+```
 
-**NOTE** none of the functions being executed in any of the examples include information about the curses screen, multiprocessing or messaging queue - this is handled seamlessly by mpcurses.
+![demo](https://raw.githubusercontent.com/soda480/mpcurses/master/docs/images/demo.gif)
+
+### What this example does
+
+Runs 3 workers in parallel and displays their activity as a live table in the terminal.
+
+### How it works
+
+Each worker receives its own worker_id and a random number of items, then logs when it starts and as it processes each item. mpcurses captures those log messages from all processes and uses the screen_layout regex rules to extract values and render them into a table, where each row represents a worker and updates in real time.
+
+### Result
+
+You get a real-time table showing all workers updating independently as they run. No interleaved logs. No manual curses code. Just structured output driven by log messages.
+
+## Examples
 
 Build the Docker image using the instructions below, run the examples. `python examples/##/sample.py`
 
-#### [Prime Numbers Counter](https://github.com/soda480/mpcurses/blob/master/examples/03/sample.py)
+### [Prime Numbers Counter](https://github.com/soda480/mpcurses/blob/master/examples/03/sample.py)
 
 Execute a function that calculates prime numbers for a set range of integers. Execution is scaled across 7 different workers where each process computes the primes for a different range of numbers. For example, the first worker computes primes for the range 1-10K, second worker computes for the range 10K-20K, etc. The main process keeps track of the number of prime numbers encountered for each worker and shows overall progress for each worker using a progress bar.
 
 ![example](https://raw.githubusercontent.com/soda480/mpcurses/master/docs/images/example3.gif)
 
-#### [Item Processor](https://github.com/soda480/mpcurses/blob/master/examples/06/sample.py)
+### [Item Processor](https://github.com/soda480/mpcurses/blob/master/examples/06/sample.py)
 
 Execute a function that processes a list of random items. Execution is scaled across 3 workers where each worker processes a unique set of items. The main process maintains indicators showing the number of items that have been processed by each worker; counting the number of Successful, Errors and Warnings. Three lists are also maintained, one for each group that list which specific items had Warnings and Failures.
 
 ![example](https://raw.githubusercontent.com/soda480/mpcurses/master/docs/images/example6.gif)
 
-#### [Bay Enclosure Firmware Update](https://github.com/soda480/mpcurses/blob/master/examples/09/sample.py)
+### [Bay Enclosure Firmware Update](https://github.com/soda480/mpcurses/blob/master/examples/09/sample.py)
 
 Execute a function that contains a workflow containing tasks to update firmware on a server residing in a blade enclosure. Execution is scaled across a worker pool with five active workers. The main process updates the screen showing status of each worker as they execute the workflow tasks for each blade server. 
 
 ![example](https://raw.githubusercontent.com/soda480/mpcurses/master/docs/images/example9.gif)
 
-### Projects using `mpcurses`
+## Projects using `mpcurses`
 
 * [edgexfoundry/sync-github-labels](https://github.com/edgexfoundry/cd-management/tree/git-label-sync) A script that synchronizes GitHub labels and milestones
 
 * [edgexfoundry/prune-github-tags](https://github.com/edgexfoundry/cd-management/tree/prune-github-tags) A script that prunes GitHub pre-release tags
 
-### Development
+## Development
 
 Clone the repository and ensure the latest version of Docker is installed on your development server.
 
 Build the Docker image:
 ```sh
 docker image build \
+--target build-image \
 -t mpcurses:latest .
 ```
 
@@ -97,5 +132,5 @@ bash
 
 Execute the build:
 ```sh
-pyb -X
+make dev
 ```

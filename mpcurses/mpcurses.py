@@ -14,7 +14,6 @@
 # limitations under the License.
 
 import re
-import sys
 import logging
 from datetime import datetime
 from curses import wrapper

@@ -17,7 +17,6 @@ import re
 import sys
 import curses
 import itertools
-from time import time
 from time import sleep
 import logging
 

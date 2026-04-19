@@ -85,19 +85,19 @@ You get a real-time table showing all workers updating independently as they run
 
 Build the Docker image using the instructions below, run the examples. `python examples/##/sample.py`
 
-### [Prime Numbers Counter](https://github.com/soda480/mpcurses/blob/master/examples/03/sample.py)
+### [Prime Numbers Counter](https://github.com/soda480/mpcurses/blob/master/docs/examples/03/sample.py)
 
 Execute a function that calculates prime numbers for a set range of integers. Execution is scaled across 7 different workers where each process computes the primes for a different range of numbers. For example, the first worker computes primes for the range 1-10K, second worker computes for the range 10K-20K, etc. The main process keeps track of the number of prime numbers encountered for each worker and shows overall progress for each worker using a progress bar.
 
 ![example](https://raw.githubusercontent.com/soda480/mpcurses/master/docs/images/example3.gif)
 
-### [Item Processor](https://github.com/soda480/mpcurses/blob/master/examples/06/sample.py)
+### [Item Processor](https://github.com/soda480/mpcurses/blob/master/docs/examples/06/sample.py)
 
 Execute a function that processes a list of random items. Execution is scaled across 3 workers where each worker processes a unique set of items. The main process maintains indicators showing the number of items that have been processed by each worker; counting the number of Successful, Errors and Warnings. Three lists are also maintained, one for each group that list which specific items had Warnings and Failures.
 
 ![example](https://raw.githubusercontent.com/soda480/mpcurses/master/docs/images/example6.gif)
 
-### [Bay Enclosure Firmware Update](https://github.com/soda480/mpcurses/blob/master/examples/09/sample.py)
+### [Bay Enclosure Firmware Update](https://github.com/soda480/mpcurses/blob/master/docs/examples/09/sample.py)
 
 Execute a function that contains a workflow containing tasks to update firmware on a server residing in a blade enclosure. Execution is scaled across a worker pool with five active workers. The main process updates the screen showing status of each worker as they execute the workflow tasks for each blade server. 
 

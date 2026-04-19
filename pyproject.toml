@@ -4,7 +4,7 @@ dynamic = ["version"]
 authors = [
   { name="Emilio Reyes", email="soda480@gmail.com" },
 ]
-description = "The mpcurses module facilitates seamless terminal screen updates from child processes within a multiprocessing worker pool, leveraging the curses library for terminal manipulation"
+description = "A Python package for running work in multiple processes and visualizing that work live in the terminal using curses"
 readme = "README.md"
 requires-python = ">=3.9"
 classifiers = [

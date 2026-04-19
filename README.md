@@ -1,5 +1,5 @@
-[![build+test](https://github.com/soda480/mpcurses/actions/workflows/main.yml/badge.svg)](https://github.com/soda480/mpcurses/actions/workflows/main.yml)
-![Coverage](https://raw.githubusercontent.com/soda480/mpcurses/main/docs/badges/coverage.svg)
+[![ci](https://github.com/soda480/mpcurses/actions/workflows/ci.yml/badge.svg)](https://github.com/soda480/mpcurses/actions/workflows/ci.yml)
+![Coverage](https://raw.githubusercontent.com/soda480/mpcurses/master/docs/badges/coverage.svg)
 [![PyPI version](https://badge.fury.io/py/mpcurses.svg)](https://badge.fury.io/py/mpcurses)
 
 # mpcurses
